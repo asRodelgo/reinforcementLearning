@@ -52,12 +52,16 @@ smart_pick <- function(hand, known_cards, pinta_suit, playFirst = TRUE, played_c
     for (c in 1:length(hand)) { # evaluate each card in hand
       cardValue <- card_value(penalty_df$card[c])
       if (grepl("caballo", penalty_df$card[c])) {
-        if (paste0(card_suit(penalty_df$card[c]),"_rey") %in% hand) {penalty_df$penalty[c] <- -20 
+        if ((paste0(card_suit(penalty_df$card[c]),"_rey") %in% hand) & 
+            !((paste0(card_suit(penalty_df$card[c]),"_rey") %in% known_cards) | (paste0(card_suit(penalty_df$card[c]),"_caballo") %in% known_cards))) {
+          penalty_df$penalty[c] <- -20 
         } else if (paste0(card_suit(penalty_df$card[c]),"_rey") %in% known_cards) {penalty_df$penalty[c] <- -3
         } else penalty_df$penalty[c] <- -10
       }
       if (grepl("rey", penalty_df$card[c])) {
-        if (paste0(card_suit(penalty_df$card[c]),"_caballo") %in% hand) {penalty_df$penalty[c] <- -20 
+        if ((paste0(card_suit(penalty_df$card[c]),"_caballo") %in% hand) & 
+            !((paste0(card_suit(penalty_df$card[c]),"_caballo") %in% known_cards) | (paste0(card_suit(penalty_df$card[c]),"_rey") %in% known_cards))) {
+          penalty_df$penalty[c] <- -20 
         } else if (paste0(card_suit(penalty_df$card[c]),"_caballo") %in% known_cards) {penalty_df$penalty[c] <- -4
         } else penalty_df$penalty[c] <- -10    
       }  
@@ -78,12 +82,16 @@ smart_pick <- function(hand, known_cards, pinta_suit, playFirst = TRUE, played_c
     for (c in 1:length(hand)) { # evaluate each card in hand
       cardValue <- card_value(penalty_df$card[c])
       if (grepl("caballo", penalty_df$card[c])) {
-        if (paste0(card_suit(penalty_df$card[c]),"_rey") %in% hand) {penalty_df$penalty[c] <- -20 
+        if ((paste0(card_suit(penalty_df$card[c]),"_rey") %in% hand) & 
+            !((paste0(card_suit(penalty_df$card[c]),"_rey") %in% known_cards) | (paste0(card_suit(penalty_df$card[c]),"_caballo") %in% known_cards))) {
+          penalty_df$penalty[c] <- -20 
         } else if (paste0(card_suit(penalty_df$card[c]),"_rey") %in% known_cards) {penalty_df$penalty[c] <- -3
         } else penalty_df$penalty[c] <- -10
       }
       if (grepl("rey", penalty_df$card[c])) {
-        if (paste0(card_suit(penalty_df$card[c]),"_caballo") %in% hand) {penalty_df$penalty[c] <- -20 
+        if ((paste0(card_suit(penalty_df$card[c]),"_caballo") %in% hand) & 
+            !((paste0(card_suit(penalty_df$card[c]),"_caballo") %in% known_cards) | (paste0(card_suit(penalty_df$card[c]),"_rey") %in% known_cards))) {
+          penalty_df$penalty[c] <- -20 
         } else if (paste0(card_suit(penalty_df$card[c]),"_caballo") %in% known_cards) {penalty_df$penalty[c] <- -4
         } else penalty_df$penalty[c] <- -10    
       }
@@ -150,6 +158,8 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
   deck <- cards_df$card
   # deal initial hands
   handA <- sample(deck,6)
+  #handA <- c("bastos_caballo", "copas_caballo","oros_caballo","espadas_caballo","oros_4","copas_7" )
+  #handA <- c("bastos_caballo", "bastos_rey","oros_4","espadas_caballo","oros_5","copas_7" )
   deck_left <- deck[-which(deck %in% handA)]
   handB <- sample(deck_left,6)
   deck_left <- deck_left[-which(deck_left %in% handB)]
@@ -194,20 +204,27 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
     if (length(deck_left)<26) { # at least 1 hand has been played
       if (winA) {
         if (sum(str_count(handA, "caballo"))==4 | sum(str_count(handA, "rey"))==4) {
-          pointsA <- 500
+          pointsA <- 200
           data_rele$NewState[act] <- data_rele$State[act]
           #data_rele$Action[act] <- "tute" # end of game
-          data_rele$Action[act] <- sample(unique(filter(cards_state, grepl("A",State))$card),1) # pick any, the game is over
-          data_rele$Reward[act] <- pointsA - pointsB
-          data_rele$Details[act] <- paste(data_rele$Details[act],"tute_playerA", collapse = ";")
+          card_pool <- unique(filter(cards_state, grepl("A",State))$card)
+          data_rele$Action[act] <- sample(card_pool[-which(grepl("caballo|rey",card_pool))],1) # pick any of the non-tute cards
+          #data_rele$Reward[act] <- pointsA - pointsB
+          data_rele$Reward[act-1] <- data_rele$Reward[act-1] + pointsA - pointsB # tute/cante points are assigned to last play
+          data_rele$Details[act-1] <- paste(data_rele$Details[act-1],"tute_playerA", collapse = ";")
         }
         # else check for cantes
         if (nrow(tuteA)>0) {
           if (verbose) print(paste0("Player A cante in :",tuteA$suit[1]," ",10*tuteA$tute[1]))
           cantes <- c(cantes,tuteA$suit[1])
           known_cards <- c(known_cards, paste0(tuteA$suit[1],"_caballo"),paste0(tuteA$suit[1],"_rey"))
-          pointsA <- pointsA + 10*tuteA$tute[1]
-          data_rele$Details[act] <- paste(data_rele$Details[act],paste0("canteA_",tuteA$suit[1]), collapse = ";")
+          #pointsA <- pointsA + 10*tuteA$tute[1]
+          data_rele$Reward[act-1] <- data_rele$Reward[act-1] + 10*tuteA$tute[1] # tute/cante points are assigned to last play
+          data_rele$Details[act-1] <- paste(data_rele$Details[act-1],paste0("canteA_",tuteA$suit[1]), collapse = ";")
+          cards_state_cantes <- mutate(cards_state, State = ifelse(card %in% handA, "A", "")) %>%
+            mutate(State = ifelse(grepl(pinta_suit,card), paste0("P",State), State)) %>%
+            mutate(State = ifelse(card %in% known_cards, paste0(State,"K"), State))
+          data_rele$NewState[act-1] <- paste(cards_state_cantes$State, collapse = ",")
           tuteA$tute[1] <- 0
           tuteA <- filter(tuteA, tute > 0)
           # cards_state <- mutate(cards_state, State = ifelse(card %in% handA, "A", ifelse(card %in% known_cards, "K", ""))) %>%
@@ -221,19 +238,25 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
            
       } else {
         if (sum(str_count(handB, "caballo"))==4 | sum(str_count(handB, "rey"))==4) {
-          pointsB <- 500
+          pointsB <- 200
           data_rele$NewState[act] <- data_rele$State[act]
           #data_rele$Action[act] <- "tute" # end of game
-          data_rele$Action[act] <- sample(unique(filter(cards_state, grepl("A",State))$card),1) # pick any, the game is over
-          data_rele$Reward[act] <- pointsA - pointsB
-          data_rele$Details[act] <- paste(data_rele$Details[act],"tute_playerB", collapse = ";")
+          data_rele$Action[act] <- sample(unique(filter(cards_state, grepl("A",State))$card),1) # pick any, the game is over. PlayerB wins
+          #data_rele$Reward[act] <- pointsA - pointsB
+          data_rele$Reward[act-1] <- data_rele$Reward[act-1] + pointsA - pointsB # tute/cante points are assigned to last play
+          data_rele$Details[act-1] <- paste(data_rele$Details[act-1],"tute_playerB", collapse = ";")
         }
         if (nrow(tuteB)>0) {
           if (verbose) print(paste0("Player B cante in :",tuteB$suit[1],10*tuteB$tute[1]))
           cantes <- c(cantes,tuteB$suit[1])
           known_cards <- c(known_cards, paste0(tuteA$suit[1],"_caballo"),paste0(tuteA$suit[1],"_rey"))
-          pointsB <- pointsB + 10*tuteB$tute[1]
-          data_rele$Details[act] <- paste(data_rele$Details[act],paste0("canteB_",tuteB$suit[1]), collapse = ";")
+          #pointsB <- pointsB + 10*tuteB$tute[1]
+          data_rele$Reward[act-1] <- data_rele$Reward[act-1] - 10*tuteB$tute[1] # tute/cante points are assigned to last play
+          data_rele$Details[act-1] <- paste(data_rele$Details[act-1],paste0("canteB_",tuteB$suit[1]), collapse = ";")
+          cards_state_cantes <- mutate(cards_state, State = ifelse(card %in% handA, "A", "")) %>%
+            mutate(State = ifelse(grepl(pinta_suit,card), paste0("P",State), State)) %>%
+            mutate(State = ifelse(card %in% known_cards, paste0(State,"K"), State))
+          data_rele$NewState[act-1] <- paste(cards_state_cantes$State, collapse = ",")
           tuteB$tute[1] <- 0
           tuteB <- filter(tuteB, tute > 0)
           # cards_state <- mutate(cards_state, State = ifelse(card %in% handA, "A", ifelse(card %in% known_cards, "K", ""))) %>%
@@ -455,8 +478,9 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
       }
     }
     #
-    cards_state <- mutate(cards_state, State = ifelse(card %in% handA, "A", ifelse(card %in% known_cards, "K", ""))) %>%
-      mutate(State = ifelse(grepl(pinta_suit,card), paste0("P",State), State))
+    cards_state <- mutate(cards_state, State = ifelse(card %in% handA, "A", "")) %>%
+      mutate(State = ifelse(grepl(pinta_suit,card), paste0("P",State), State)) %>%
+      mutate(State = ifelse(card %in% known_cards, paste0(State,"K"), State))
     data_rele$NewState[act] <- paste(cards_state$State, collapse = ",")
     data_rele$Action[act] <- playA
     data_rele$Reward[act] <- pointsA - pointsB
@@ -469,10 +493,10 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
     #if (continue == "y") keep_on <- TRUE else keep_on <- FALSE
     if (verbose) print(paste0("playerA draws ",drawA," Player B draws ",drawB))
     #
+    total_pointsA <- total_pointsA + pointsA
+    total_pointsB <- total_pointsB + pointsB
+    if (verbose) print(known_cards)
   }
-  total_pointsA <- total_pointsA + pointsA
-  total_pointsB <- total_pointsB + pointsB
-  if (verbose) print(known_cards)
   #print(paste0("player A: ", pointsA, " - player B: ", pointsB, ". Winner A: ",winA))
   #
   ############################################

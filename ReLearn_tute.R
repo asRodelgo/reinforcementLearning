@@ -11,9 +11,9 @@ this_game <- play_tute(smartPlay = TRUE)
 #
 # Play multiple games. Generate data for model training
 games <- data.frame()
-num_games <- 500
+num_games <- 300
 for (g in 1:num_games) {
-  this_game <- play_tute(smartPlay = FALSE)
+  this_game <- play_tute(smartPlay = TRUE)
   if (nrow(games) > 0) games <- bind_rows(games, this_game) else games <- this_game
   if (g %in% seq(0,num_games,50)) print(paste0("games played: ",g))
 }
@@ -27,6 +27,7 @@ model <- ReinforcementLearning(games, s = "State", a = "Action", r = "Reward",
                                s_new = "NewState", iter = 1, control = control)
 # Print optimal policy
 policy(model)
+summary(model)
 
 
 
