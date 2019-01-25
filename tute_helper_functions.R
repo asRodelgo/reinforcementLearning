@@ -208,7 +208,11 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
           data_rele$NewState[act] <- data_rele$State[act]
           #data_rele$Action[act] <- "tute" # end of game
           card_pool <- unique(filter(cards_state, grepl("A",State))$card)
-          data_rele$Action[act] <- sample(card_pool[-which(grepl("caballo|rey",card_pool))],1) # pick any of the non-tute cards
+          if (sum(str_count(handA, "caballo"))==4) { # pick any of the non-tute cards
+            data_rele$Action[act] <- sample(card_pool[-which(grepl("caballo",card_pool))],1) 
+          } else {
+            data_rele$Action[act] <- sample(card_pool[-which(grepl("rey",card_pool))],1) 
+          }  
           #data_rele$Reward[act] <- pointsA - pointsB
           data_rele$Reward[act-1] <- data_rele$Reward[act-1] + pointsA - pointsB # tute/cante points are assigned to last play
           data_rele$Details[act-1] <- paste(data_rele$Details[act-1],"tute_playerA", collapse = ";")
