@@ -9,13 +9,25 @@ cards_order <- data.frame(card = c(1,3,"rey","caballo","sota",7,6,5,4,2), order 
 # play 1 game
 this_game <- play_tute(smartPlay = TRUE)
 #
-# Play multiple games
-games <- data.frame(reward = 0, stringsAsFactors = FALSE)
-num_games <- 10
+# Play multiple games. Generate data for model training
+games <- data.frame()
+num_games <- 500
 for (g in 1:num_games) {
   this_game <- play_tute(smartPlay = FALSE)
-  print(paste0(this_game[1]," - ",this_game[2]))
-  games[g,1] <- this_game[1]-this_game[2]
+  if (nrow(games) > 0) games <- bind_rows(games, this_game) else games <- this_game
+  if (g %in% seq(0,num_games,50)) print(paste0("games played: ",g))
 }
+###########################################
+
+##### Train model 
+# Define reinforcement learning parameters
+control <- list(alpha = 0.2, gamma = 0.4, epsilon = 0.1)
+# Perform reinforcement learning
+model <- ReinforcementLearning(games, s = "State", a = "Action", r = "Reward", 
+                               s_new = "NewState", iter = 1, control = control)
+# Print optimal policy
+policy(model)
+
+
 
 

@@ -182,6 +182,7 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
                           Reward = 0,
                           NewState = "",
                           Details = "",
+                          Hand = paste(handA, collapse = ","),
                           stringsAsFactors = FALSE)
   # Action counter
   act <- 1
@@ -462,6 +463,7 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
     act <- act + 1
     data_rele[act,]$State <- data_rele$NewState[act-1]
     data_rele$Details[act] <- paste("",paste0("drawA_",drawA),paste0("drawB_",drawB), collapse = ";")
+    data_rele$Hand[act] <- paste(handA, collapse = ",")
     #
     #continue <- readline(prompt = "Continue? y/n")
     #if (continue == "y") keep_on <- TRUE else keep_on <- FALSE
@@ -616,6 +618,7 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
       act <- act + 1
       data_rele[act,]$State <- data_rele$NewState[act-1]
       data_rele$Details[act] <- ""
+      data_rele$Hand[act] <- paste(handA, collapse = ",")
     }
     if (verbose) {
       print(paste0("playA: ",playA," playB: ",playB))

@@ -68,8 +68,23 @@ model_new <- ReinforcementLearning(data_new,
 print(model_new)
 # Plot reinforcement learning curve
 plot(model_new)
+#
+#
+############################################
+# Learning tic-tac-toe
+############################################
+#
+# Load dataset
+data("tictactoe")
 
+# Define reinforcement learning parameters
+control <- list(alpha = 0.2, gamma = 0.4, epsilon = 0.1)
 
+# Perform reinforcement learning
+model <- ReinforcementLearning(tictactoe[1:1000,], s = "State", a = "Action", r = "Reward", 
+                               s_new = "NextState", iter = 1, control = control)
 
+# Print optimal policy
+policy(model)
 
 
