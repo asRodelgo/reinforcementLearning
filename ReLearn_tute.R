@@ -11,25 +11,30 @@ this_game <- play_tute(smartPlay = TRUE)
 #
 # Play multiple games. Generate data for model training
 games <- data.frame()
-num_games <- 500
+num_games <- 2000
 for (g in 1:num_games) {
-  this_game <- play_tute(smartPlay = TRUE)
+  this_game <- play_tute(smartPlay = FALSE)
   if (nrow(games) > 0) games <- bind_rows(games, this_game) else games <- this_game
   if (g %in% seq(0,num_games,50)) print(paste0("games played: ",g))
 }
 ###########################################
-
+# some stats
+cards_stats <- group_by(games, Action) %>%
+  summarise(avgReward = mean(Reward), medianReward = median(Reward))
+#
+games2 <- 
+#
 ##### Train model 
 # Define reinforcement learning parameters
-control <- list(alpha = 0.4, gamma = 0.5, epsilon = 0.1)
+control <- list(alpha = 1, gamma = 1, epsilon = 0.1)
 # Perform reinforcement learning
 model <- ReinforcementLearning(games, s = "State", a = "Action", r = "Reward", 
-                               s_new = "NewState", iter = 100, control = control)
+                               s_new = "NewState", iter = 10, control = control)
 # Print optimal policy
 table(policy(model))
 policy(model)
 summary(model)
-
+plot(model)
 
 
 

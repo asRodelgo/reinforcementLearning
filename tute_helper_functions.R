@@ -677,5 +677,19 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
   
 }
 
+# transform State sequence into cards
+status2cards <- function(state) {
+  
+  # state <- games$State[10]
+
+  state_df <- data.frame(State = str_split(state,",")[[1]], stringsAsFactors = FALSE)
+  state_p <- bind_cols(cards_df, state_df)
+  
+  pinta <- str_split(filter(state_p, grepl("P",State))$card[1], "_")[[1]][1]
+  handA <- filter(state_p, grepl("A",State))$card
+  known_cards <- filter(state_p, grepl("K",State))$card
+  
+  return(list(handA,pinta,known_cards))
+} 
 
 
