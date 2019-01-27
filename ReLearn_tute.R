@@ -41,8 +41,20 @@ plot(model)
 # possible hands. Somehow I need my model to predict actions within the possible cards.
 ####
 ## figure out why espadas_1 is the default pick for the model
-esp1 <- policy(model)[which(policy(model)=="espadas_1")]
-esp1 <- as.data.frame(esp1, stringsAsFactors = FALSE)
 
+match_acc <- as.data.frame(policy(model)[which(policy(model)=="espadas_sota")], stringsAsFactors = FALSE) %>%
+  mutate(State = gsub(".",",",row.names(.),fixed = TRUE)) %>%
+  group_by(State) %>%
+  mutate(HandA = paste(state2cards(State)[[1]],collapse = ",")) %>%
+  mutate(match = ifelse(grepl("espadas_1",HandA),1,0)) %>%
+  ungroup() %>%
+  summarise(accuracy = sum(match)/n())
 
+# esp1 <- policy(model)[which(policy(model)=="espadas_1")]
+# esp1 <- as.data.frame(esp1, stringsAsFactors = FALSE) %>%
+#   mutate(State = gsub(".",",",row.names(.),fixed = TRUE)) %>%
+#   group_by(State) %>%
+#   mutate(HandA = paste(state2cards(State)[[1]],collapse = ","))
+# esp1 <- mutate(esp1, match = ifelse(grepl("espadas_1",HandA),1,0))
+# sum(esp1$match)/nrow(esp1)
 
