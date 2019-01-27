@@ -22,7 +22,7 @@ for (g in 1:num_games) {
 cards_stats <- group_by(games, Action) %>%
   summarise(avgReward = mean(Reward), medianReward = median(Reward))
 #
-games2 <- 
+#games2 <- mutate(games, HandA = state2cards_vector(State)[[1]])
 #
 ##### Train model 
 # Define reinforcement learning parameters
@@ -35,6 +35,14 @@ table(policy(model))
 policy(model)
 summary(model)
 plot(model)
+
+####
+# write a function that compares predicted action and handA: see how many actions fall outside of 
+# possible hands. Somehow I need my model to predict actions within the possible cards.
+####
+## figure out why espadas_1 is the default pick for the model
+esp1 <- policy(model)[which(policy(model)=="espadas_1")]
+esp1 <- as.data.frame(esp1, stringsAsFactors = FALSE)
 
 
 

@@ -678,7 +678,7 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
 }
 
 # transform State sequence into cards
-status2cards <- function(state) {
+state2cards <- function(state) {
   
   # state <- games$State[10]
 
@@ -691,5 +691,6 @@ status2cards <- function(state) {
   
   return(list(handA,pinta,known_cards))
 } 
-
+# vectorize it
+state2cards_vector <- Vectorize(state2cards)
 
