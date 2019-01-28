@@ -44,12 +44,14 @@ card_value <- function(c) {
 }
 #
 # Make a better than random card pick for stage 1 of the game
-smart_pick <- function(hand, known_cards, pinta_suit, playFirst = TRUE, played_card=NULL) {
-  unkwown <- filter(cards_df, !(card %in% c(hand,known_cards)))
+smart_pick <- function(hand, known_cards, pinta_suit, playFirst = TRUE, played_card=NULL, actionCard = NULL) {
   # known_cards: besides the input hand these cards are known to all players at this point
-  penalty_df <- data.frame(card = hand, penalty = rep(0,length(hand)), stringsAsFactors = FALSE) # Initialize reward. The lowest penalty option is chosen as the pick
+  unkwown <- filter(cards_df, !(card %in% c(hand,known_cards)))
+  # if a specific card must be evaluated instead of the whole hand
+  if (!is.null(actionCard)) cardPool <- actionCard else cardPool <- hand
+  penalty_df <- data.frame(card = cardPool, penalty = rep(0,length(cardPool)), stringsAsFactors = FALSE) # Initialize reward. The lowest penalty option is chosen as the pick
   if (playFirst) { # player opens round
-    for (c in 1:length(hand)) { # evaluate each card in hand
+    for (c in 1:length(cardPool)) { # evaluate each card in hand or selected action card
       cardValue <- card_value(penalty_df$card[c])
       if (grepl("caballo", penalty_df$card[c])) {
         if ((paste0(card_suit(penalty_df$card[c]),"_rey") %in% hand) & 
@@ -79,7 +81,7 @@ smart_pick <- function(hand, known_cards, pinta_suit, playFirst = TRUE, played_c
       }
     }
   } else {
-    for (c in 1:length(hand)) { # evaluate each card in hand
+    for (c in 1:length(cardPool)) { # evaluate each card in hand
       cardValue <- card_value(penalty_df$card[c])
       if (grepl("caballo", penalty_df$card[c])) {
         if ((paste0(card_suit(penalty_df$card[c]),"_rey") %in% hand) & 
@@ -110,12 +112,14 @@ smart_pick <- function(hand, known_cards, pinta_suit, playFirst = TRUE, played_c
 }
 #
 # Make a better than random card pick for stage 2 of the game
-smart_pick2 <- function(hand, known_cards, pinta_suit, playFirst = TRUE, played_card=NULL) {
-  unkwown <- filter(cards_df, !(card %in% c(hand,known_cards)))
+smart_pick2 <- function(hand, known_cards, pinta_suit, playFirst = TRUE, played_card=NULL, actionCard = NULL) {
   # known_cards: besides the input hand these cards are known to all players at this point
-  penalty_df <- data.frame(card = hand, penalty = rep(0,length(hand)), stringsAsFactors = FALSE) # Initialize reward. The lowest penalty option is chosen as the pick
+  unkwown <- filter(cards_df, !(card %in% c(hand,known_cards)))
+  # if a specific card must be evaluated instead of the whole hand
+  if (!is.null(actionCard)) cardPool <- actionCard else cardPool <- hand
+  penalty_df <- data.frame(card = cardPool, penalty = rep(0,length(cardPool)), stringsAsFactors = FALSE) # Initialize reward. The lowest penalty option is chosen as the pick
   if (playFirst) { # player opens round
-    for (c in 1:length(hand)) { # evaluate each card in hand
+    for (c in 1:length(cardPool)) { # evaluate each card in hand
       cardValue <- card_value(penalty_df$card[c])
       for (c2 in 1:length(unkwown$card)) {
         if (card_suit(unkwown$card[c2])==card_suit(penalty_df$card[c])) {
@@ -132,7 +136,7 @@ smart_pick2 <- function(hand, known_cards, pinta_suit, playFirst = TRUE, played_
       }
     }
   } else {
-    for (c in 1:length(hand)) { # evaluate each card in hand
+    for (c in 1:length(cardPool)) { # evaluate each card in hand
       cardValue <- card_value(penalty_df$card[c])
       if (card_suit(played_card) == card_suit(penalty_df$card[c])) {
         if (order(str_split(played_card,"_")[[1]][2]) < order(str_split(penalty_df$card[c],"_")[[1]][2])) {
@@ -681,7 +685,8 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
 state2cards <- function(state) {
   
   # state <- games$State[10]
-
+  # state <- this_game$State[10]
+  
   state_df <- data.frame(State = str_split(state,",")[[1]], stringsAsFactors = FALSE)
   state_p <- bind_cols(cards_df, state_df)
   
@@ -689,14 +694,28 @@ state2cards <- function(state) {
   handA <- filter(state_p, grepl("A",State))$card
   known_cards <- filter(state_p, grepl("K",State))$card
   
-  return(list(handA,pinta,known_cards))
+  return(list(handA=handA,pinta=pinta,known_cards=known_cards))
 } 
 # vectorize it
 state2cards_vector <- Vectorize(state2cards)
 #
-# Action reward
+# Action reward for player A
 actionReward <- function(state, action) {
   
+  input_cards <- state2cards(state)
+  hand <- input_cards$handA
+  pinta_suit <- input_cards$pinta
+  known_cards <- input_cards$known_cards
+  
+  # compute reward for given action
+  # action <- hand[1]
+  if (length(hand) < 6) {
+    reward <- smart_pick2(hand = hand, known_cards = known_cards, pinta_suit = pinta_suit, playFirst = TRUE, played_card = NULL, actionCard = action)$penalty
+  } else { # improve this. Must be a way to differentiate which phase of the game we're in
+    reward <- smart_pick(hand = hand, known_cards = known_cards, pinta_suit = pinta_suit, playFirst = TRUE, played_card = NULL, actionCard = action)$penalty
+  }
+  
+  # compute Next State
   
   out <- list(NextState = next_state, Reward = reward)
   return(out)
