@@ -676,7 +676,7 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
   return(data_rele)
   
 }
-
+#
 # transform State sequence into cards
 state2cards <- function(state) {
   
@@ -693,4 +693,14 @@ state2cards <- function(state) {
 } 
 # vectorize it
 state2cards_vector <- Vectorize(state2cards)
+#
+# Action reward
+actionReward <- function(state, action) {
+  
+  
+  out <- list(NextState = next_state, Reward = reward)
+  return(out)
+}
+
+
 
