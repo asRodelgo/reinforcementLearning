@@ -43,6 +43,34 @@ card_value <- function(c) {
   return(v)
 }
 #
+# Calculate the risk of an opponent calling a cante or tute
+computeCanteRisk <- function(play_card = card, unknown = unknown, pinta_suit = pinta_suit) {
+  
+  suits <- c("oros","copas","espadas","bastos")
+  
+  risk <- 0
+  for (s in suits[-which(suits == card_suit(play_card))]) {
+    if ((paste0(s,"_caballo") %in% unknown$card) & (paste0(s,"_rey") %in% unknown$card)) { # potential cante
+      unknown_f <- filter(unknown, !(card %in% c(paste0(s,"_caballo"), paste0(s,"_rey"))))
+      if (card_suit(play_card) == pinta_suit) { # if suit is pinta
+        if (length(filter(unkwown_f, grepl(card_suit(play_card),card), value > card_value(play_card))$value) > 0) { # player B can play winning cards without using cante cards
+          risk <- max(risk, risk + 40)
+        }
+      } else {
+        if (length(filter(unkwown_f, (grepl(card_suit(play_card),card)) | (grepl(pinta_suit,card)), value > card_value(play_card))$value) > 0) { # player B can play winning cards without using cante cards
+          risk <- max(risk, risk + 20)
+        }
+      }
+    }
+  }
+  # implement Tute risk loop
+  
+  
+  return(risk)
+  
+}
+
+
 # Make a better than random card pick for stage 1 of the game
 smart_pick <- function(hand, known_cards, pinta_suit, playFirst = TRUE, played_card=NULL, actionCard = NULL) {
   # known_cards: besides the input hand these cards are known to all players at this point
@@ -53,6 +81,11 @@ smart_pick <- function(hand, known_cards, pinta_suit, playFirst = TRUE, played_c
   if (playFirst) { # player opens round
     for (c in 1:length(cardPool)) { # evaluate each card in hand or selected action card
       cardValue <- card_value(penalty_df$card[c])
+      
+      # check whether player B can produce cante or tute if he wins the hand
+      #if ()
+      #canteRisk <- computeCanteRisk(card = penalty_df$card[c], unknown = unknown, pinta_suit = pinta_suit)
+      
       if (grepl("caballo", penalty_df$card[c])) {
         if ((paste0(card_suit(penalty_df$card[c]),"_rey") %in% hand) & 
             !((paste0(card_suit(penalty_df$card[c]),"_rey") %in% known_cards) | (paste0(card_suit(penalty_df$card[c]),"_caballo") %in% known_cards))) {
@@ -707,15 +740,17 @@ actionReward <- function(state, action) {
   pinta_suit <- input_cards$pinta
   known_cards <- input_cards$known_cards
   
-  # compute reward for given action
+  # compute reward for a given action: Consider tutes, cantes, etc.
   # action <- hand[1]
   if (length(hand) < 6) {
     reward <- smart_pick2(hand = hand, known_cards = known_cards, pinta_suit = pinta_suit, playFirst = TRUE, played_card = NULL, actionCard = action)$penalty
-  } else { # improve this. Must be a way to differentiate which phase of the game we're in
+  } else { # improve this. There must be a way to differentiate which phase of the game we're in
     reward <- smart_pick(hand = hand, known_cards = known_cards, pinta_suit = pinta_suit, playFirst = TRUE, played_card = NULL, actionCard = action)$penalty
   }
   
-  # compute Next State
+  # compute Next State. Random. Do I use a seed to replicate same outcome?
+  
+  
   
   out <- list(NextState = next_state, Reward = reward)
   return(out)
