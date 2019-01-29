@@ -47,14 +47,29 @@ card_value <- function(c) {
 computeCanteRisk <- function(play_card = card, unknown = unknown, pinta_suit = pinta_suit) {
   
   suits <- c("oros","copas","espadas","bastos")
+  N <- nrow(unknown)
   
   risk <- 0
   for (s in suits[-which(suits == card_suit(play_card))]) {
     if ((paste0(s,"_caballo") %in% unknown$card) & (paste0(s,"_rey") %in% unknown$card)) { # potential cante
+      # using hypergeometric distribution: Probability of drawing this cante in a size 6 sample without replacement
+      #prob <- 30/(N*(N-1)) 
+      # x <- number of successes (cante = 2: caballo and rey from same suit)
+      # m <- Total number of successful cards in unknown deck (cante = 2: caballo and rey from same suit)
+      # n <- Total number of unsuccessful cards in unknown deck
+      # k <- sample (player B holds a hand of 6 cards)
+      prob_cante <- dhyper(x = 2, m = 2, n = N-2, k = 6) # conditional prob of player B having winning cards besides the cante cards (sample = 6-2 = 4) 
+      
       unknown_f <- filter(unknown, !(card %in% c(paste0(s,"_caballo"), paste0(s,"_rey"))))
       if (card_suit(play_card) == pinta_suit) { # if suit is pinta
-        if (length(filter(unkwown_f, grepl(card_suit(play_card),card), value > card_value(play_card))$value) > 0) { # player B can play winning cards without using cante cards
+        K <- length(filter(unkwown_f, grepl(card_suit(play_card),card), value > card_value(play_card))$value)
+        if (K > 0) { # player B can play winning cards without using cante cards
           risk <- max(risk, risk + 40)
+          cond_prob_winner <- sum(dhyper(x = 1:K, m = K, n = N-2, k = 4)) # conditional prob of player B having winning cards besides the cante cards (sample = 6-2 = 4)
+          # times prob of drawing cante gives: 
+          prob <- cond_prob_winner*prob_cante
+          # expected risk
+          E_risk <- prob*40
         }
       } else {
         if (length(filter(unkwown_f, (grepl(card_suit(play_card),card)) | (grepl(pinta_suit,card)), value > card_value(play_card))$value) > 0) { # player B can play winning cards without using cante cards
@@ -64,10 +79,31 @@ computeCanteRisk <- function(play_card = card, unknown = unknown, pinta_suit = p
     }
   }
   # implement Tute risk loop
-  
+  if (length(str_count(unknown$card,"rey")) == 4) { # tute de reyes
+    unknown_f <- filter(unknown, !(grepl("rey",card)))
+    if (card_suit(play_card) == pinta_suit) { # if suit is pinta
+      if (length(filter(unkwown_f, grepl(card_suit(play_card),card), value > card_value(play_card))$value) > 0) { # player B can play winning cards without using cante cards
+        risk <- max(risk, risk + 200)
+      }
+    } else {
+      if (length(filter(unkwown_f, (grepl(card_suit(play_card),card)) | (grepl(pinta_suit,card)), value > card_value(play_card))$value) > 0) { # player B can play winning cards without using cante cards
+        risk <- max(risk, risk + 200)
+      }
+    }
+  } else if (length(str_count(unknown$card,"caballo")) == 4) { # tute de caballos
+    unknown_f <- filter(unknown, !(grepl("caballo",card)))
+    if (card_suit(play_card) == pinta_suit) { # if suit is pinta
+      if (length(filter(unkwown_f, grepl(card_suit(play_card),card), value > card_value(play_card))$value) > 0) { # player B can play winning cards without using cante cards
+        risk <- max(risk, risk + 200)
+      }
+    } else {
+      if (length(filter(unkwown_f, (grepl(card_suit(play_card),card)) | (grepl(pinta_suit,card)), value > card_value(play_card))$value) > 0) { # player B can play winning cards without using cante cards
+        risk <- max(risk, risk + 200)
+      }
+    }
+  } 
   
   return(risk)
-  
 }
 
 
@@ -81,11 +117,10 @@ smart_pick <- function(hand, known_cards, pinta_suit, playFirst = TRUE, played_c
   if (playFirst) { # player opens round
     for (c in 1:length(cardPool)) { # evaluate each card in hand or selected action card
       cardValue <- card_value(penalty_df$card[c])
-      
       # check whether player B can produce cante or tute if he wins the hand
-      #if ()
-      #canteRisk <- computeCanteRisk(card = penalty_df$card[c], unknown = unknown, pinta_suit = pinta_suit)
-      
+      canteRisk <- computeCanteRisk(play_card = penalty_df$card[c], unknown = unknown, pinta_suit = pinta_suit)
+      penalty_df$penalty[c] <- penalty_df$penalty[c] - canteRisk
+      #
       if (grepl("caballo", penalty_df$card[c])) {
         if ((paste0(card_suit(penalty_df$card[c]),"_rey") %in% hand) & 
             !((paste0(card_suit(penalty_df$card[c]),"_rey") %in% known_cards) | (paste0(card_suit(penalty_df$card[c]),"_caballo") %in% known_cards))) {
