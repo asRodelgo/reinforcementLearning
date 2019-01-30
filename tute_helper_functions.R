@@ -160,7 +160,7 @@ computeCanteRisk <- function(play_card = card, unknown = unknown, pinta_suit = p
   return(E_risk)
 }
 #
-# Calculate the expected value of a played card for player A (excluding the card's own value)
+# Calculate the expected gained value from player B of a played card by player A 
 expectedValueAdded <- function(play_card = card, unknown = unknown, pinta_suit = pinta_suit) {
   
   suits <- c("oros","copas","espadas","bastos")
@@ -187,6 +187,49 @@ expectedValueAdded <- function(play_card = card, unknown = unknown, pinta_suit =
       # }
     }
   }
+  return(E_value)
+}
+#
+# Expected value of player A playing a particular card
+expectedValue <- function(hand = hand, play_card = card, unknown = unknown, pinta_suit = pinta_suit) {
+  
+  suits <- c("oros","copas","espadas","bastos")
+  N <- nrow(unknown)
+  unknown <- mutate(unknown, order = card_order.vector(card))
+  hand_f <- hand[-which(play_card %in% hand)]
+  E_value <- 0
+  for (s in suits) {
+    if (card_suit(play_card) == pinta_suit) { # if suit is pinta
+      K <- filter(unknown, grepl(card_suit(play_card),card), order > card_order(play_card))
+      if (nrow(K) > 0) prob_win <- dhyper(x = 1, m = nrow(K), n = N-nrow(K), k = 6) else prob_win <- 0
+    } else {
+      K <- bind_rows(filter(unknown, grepl(card_suit(play_card),card), order > card_order(play_card)),
+                     filter(unknown, grepl(pinta_suit,card)))
+      if (nrow(K) > 0) prob_win <- dhyper(x = 1, m = nrow(K), n = N-nrow(K), k = 6) else prob_win <- 0
+    }
+    E_value <- E_value + card_value(play_card)*prob_win
+    # factor in cantes
+    if ((paste0(s,"_caballo") == play_card) & (paste0(s,"_rey") %in% hand_f)) { # potential cante
+      if (card_suit(play_card) == pinta_suit) E_value <- E_value - 40 else E_value <- E_value - 20
+    } else if ((paste0(s,"_rey") == play_card) & (paste0(s,"_caballo") %in% hand_f)) {
+      if (card_suit(play_card) == pinta_suit) E_value <- E_value - 40 else E_value <- E_value - 20
+    } else if (paste0(s,"_caballo") %in% hand_f) {
+      K <- filter(unknown, paste0(s,"_rey") %in% card)
+      prob_cantepair <- nrow(K)/N # assuming payer A wins the hand
+      if (card_suit(play_card) == pinta_suit) E_value <- E_value + prob_cantepair*40 else E_value <- E_value + prob_cantepair*20
+    } else if (paste0(s,"_rey") %in% hand_f) {
+      K <- filter(unknown, paste0(s,"_caballo") %in% card)
+      prob_cantepair <- nrow(K)/N
+      if (card_suit(play_card) == pinta_suit) E_value <- E_value + prob_cantepair*40 else E_value <- E_value + prob_cantepair*20 
+    }
+    #### factor in tutes: For later
+    # for (figure in c("caballo","rey")) {
+    #   if (sum(str_count(unknown$card,figure)) == 4) { # tute de reyes
+    #     prob_tute <- dhyper(x = 4, m = 4, n = N-4, k = 6) # conditional prob of player B having winning cards besides the cante cards (sample = 6-2 = 4)  
+    #     unknown_f <- filter(unknown, !(grepl(figure,card)))
+    ####
+  }
+
   return(E_value)
 }
 #
@@ -865,18 +908,21 @@ actionReward <- function(state, action) {
 }
 #
 # checking probabilities and risks
-this_state <- state2cards(this_game$State[15])
+this_state <- state2cards(this_game$State[1])
 hand <- this_state$handA
 known_cards <- this_state$known_cards
 pinta_suit <- this_state$pinta
 unknown <- filter(cards_df, !(card %in% c(hand,known_cards)))
 # Expected point loss
 for (c in hand) {
-  #print(paste0(c,": ",round(computeCanteRisk(play_card = c, unknown = unknown, pinta_suit = pinta_suit),3)))
+  print(paste0(c,": ",round(computeCanteRisk(play_card = c, unknown = unknown, pinta_suit = pinta_suit),3)))
+  print(paste0(c,": ",round(expectedValue(hand = hand, play_card = c, unknown = unknown, pinta_suit = pinta_suit),3)))
   print(paste0(c,": ",round(expectedValueAdded(play_card = c, unknown = unknown, pinta_suit = pinta_suit),3)))
 }
-# expected value
-round(expectedValue(play_card = hand[1], unknown = unknown, pinta_suit = pinta_suit),3)
+# expected value from player A action
+round(expectedValue(hand = hand, play_card = hand[1], unknown = unknown, pinta_suit = pinta_suit),3)
+# expected value added from player B
+round(expectedValueAdded(play_card = hand[1], unknown = unknown, pinta_suit = pinta_suit),3)
 
 
 
