@@ -23,7 +23,7 @@ define_cards <- function() {
   return(cards_df)
 }
 #
-# return value order for a given card
+# return value order for a given card number
 order <- function(c){
   o <- filter(cards_order, card == c)$order
   return(as.numeric(o))
@@ -32,22 +32,56 @@ order <- function(c){
 # vectorize it
 order.vector <- Vectorize(order)
 #
+# return value order for a given card
+card_order <- function(card){
+  card_number <- card_number(card)
+  order <- filter(cards_order, card == card_number)$order
+  return(as.numeric(order))
+}
+# vectorize
+card_order.vector <- Vectorize(card_order)
 # return the suit of a given card
 card_suit <- function(card) {
   return(str_split(card,"_")[[1]][1]) 
 }
 #
+# return the number of a given card
+card_number <- function(card) {
+  return(str_split(card,"_")[[1]][2]) 
+}
+#
 # return the value of a given card
-card_value <- function(c) {
-  v <- filter(cards_df, card == c)$value[1]
+card_value <- function(card) {
+  v <- filter(cards_df, card == card)$value[1]
   return(v)
 }
+#
+# transform State sequence into cards
+state2cards <- function(state) {
+  
+  # state <- games$State[10]
+  # state <- this_game$State[10]
+  
+  state_df <- data.frame(State = str_split(state,",")[[1]], stringsAsFactors = FALSE)
+  turn <- as.numeric(filter(state_df, State %in% seq(1,20,1)))
+  state_df <- filter(state_df, !(State %in% seq(1,20,1)))
+  state_p <- bind_cols(cards_df, state_df)
+  
+  pinta <- str_split(filter(state_p, grepl("P",State))$card[1], "_")[[1]][1]
+  handA <- filter(state_p, grepl("A",State))$card
+  known_cards <- filter(state_p, grepl("K",State))$card
+  
+  return(list(handA=handA,pinta=pinta,known_cards=known_cards,turn=turn))
+} 
+# vectorize it
+state2cards_vector <- Vectorize(state2cards)
 #
 # Calculate the risk of an opponent calling a cante or tute
 computeCanteRisk <- function(play_card = card, unknown = unknown, pinta_suit = pinta_suit) {
   
   suits <- c("oros","copas","espadas","bastos")
   N <- nrow(unknown)
+  unknown <- mutate(unknown, order = card_order.vector(card))
   
   risk <- 0
   E_risk <- 0
@@ -59,11 +93,18 @@ computeCanteRisk <- function(play_card = card, unknown = unknown, pinta_suit = p
       # m <- Total number of successful cards in unknown deck (cante = 2: caballo and rey from same suit)
       # n <- Total number of unsuccessful cards in unknown deck
       # k <- sample (player B holds a hand of 6 cards)
-      prob_cante <- dhyper(x = 2, m = 2, n = N-2, k = 6) # conditional prob of player B having winning cards besides the cante cards (sample = 6-2 = 4) 
-      #
+      prob_cante <- dhyper(x = 2, m = 2, n = N-2, k = 6) # prob of player B holding this suit's cante in his hand
+        # # simulate
+        # count <- 0
+        # for (i in 1:1000){
+        #   sb <- sample(unknown$card,6)
+        #   count <- count + length(sb[which((paste0(s,"_caballo") %in% sb) & (paste0(s,"_rey") %in% sb))])
+        # }
+        # sim_prob_cante <- count/1000
+        # #
       unknown_f <- filter(unknown, !(card %in% c(paste0(s,"_caballo"), paste0(s,"_rey"))))
       if (card_suit(play_card) == pinta_suit) { # if suit is pinta
-        K <- length(filter(unkwown_f, grepl(card_suit(play_card),card), value > card_value(play_card))$value)
+        K <- length(filter(unknown_f, grepl(card_suit(play_card),card), order > card_order(play_card))$card)
         if (K > 0) { # player B can play winning cards without using cante cards
           risk <- max(risk, risk + 40)
           cond_prob_winner <- sum(dhyper(x = 1:K, m = K, n = N-2, k = 4)) # conditional prob of player B having winning cards besides the cante cards (sample = 6-2 = 4)
@@ -73,7 +114,8 @@ computeCanteRisk <- function(play_card = card, unknown = unknown, pinta_suit = p
           E_risk <- E_risk + prob*40
         }
       } else {
-        K <- length(filter(unkwown_f, (grepl(card_suit(play_card),card)) | (grepl(pinta_suit,card)), value > card_value(play_card))$value)
+        K <- length(filter(unknown_f, grepl(card_suit(play_card),card), order > card_order(play_card))) +
+                           length(filter(unknown_f, grepl(pinta_suit,card)))
         if (K > 0) { # player B can play winning cards without using cante cards
           risk <- max(risk, risk + 20)
           cond_prob_winner <- sum(dhyper(x = 1:K, m = K, n = N-2, k = 4)) # conditional prob of player B having winning cards besides the cante cards (sample = 6-2 = 4)
@@ -87,11 +129,11 @@ computeCanteRisk <- function(play_card = card, unknown = unknown, pinta_suit = p
   }
   # implement Tute risk loop
   for (figure in c("caballo","rey")) {
-    if (length(str_count(unknown$card,figure)) == 4) { # tute de reyes
+    if (sum(str_count(unknown$card,figure)) == 4) { # tute de reyes
       prob_tute <- dhyper(x = 4, m = 4, n = N-4, k = 6) # conditional prob of player B having winning cards besides the cante cards (sample = 6-2 = 4)  
       unknown_f <- filter(unknown, !(grepl(figure,card)))
       if (card_suit(play_card) == pinta_suit) { # if suit is pinta
-        K <- length(filter(unkwown_f, grepl(card_suit(play_card),card), value > card_value(play_card))$value)
+        K <- length(filter(unknown_f, grepl(card_suit(play_card),card), order > card_order(play_card))$card)
         if (K > 0) { # player B can play winning cards without using cante cards
           risk <- max(risk, risk + 200)
           cond_prob_winner <- sum(dhyper(x = 1:K, m = K, n = N-4, k = 2)) # conditional prob of player B having winning cards besides the cante cards (sample = 6-2 = 4)
@@ -101,7 +143,8 @@ computeCanteRisk <- function(play_card = card, unknown = unknown, pinta_suit = p
           E_risk <- E_risk + prob*200
         }
       } else {
-        K <- length(filter(unkwown_f, (grepl(card_suit(play_card),card)) | (grepl(pinta_suit,card)), value > card_value(play_card))$value)
+        K <- length(filter(unknown_f, grepl(card_suit(play_card),card), order > card_order(play_card))) +
+          length(filter(unknown_f, grepl(pinta_suit,card)))
         if (K > 0) { # player B can play winning cards without using cante cards
           risk <- max(risk, risk + 200)
           cond_prob_winner <- sum(dhyper(x = 1:K, m = K, n = N-4, k = 2)) # conditional prob of player B having winning cards besides the cante cards (sample = 6-2 = 4)
@@ -116,8 +159,37 @@ computeCanteRisk <- function(play_card = card, unknown = unknown, pinta_suit = p
 
   return(E_risk)
 }
-
-
+#
+# Calculate the expected value of a played card for player A (excluding the card's own value)
+expectedValueAdded <- function(play_card = card, unknown = unknown, pinta_suit = pinta_suit) {
+  
+  suits <- c("oros","copas","espadas","bastos")
+  N <- nrow(unknown)
+  unknown <- mutate(unknown, order = card_order.vector(card))
+  E_value <- 0
+  if (card_suit(play_card) == pinta_suit) { # if suit is pinta
+    K <- filter(unknown, grepl(card_suit(play_card),card), order > card_order(play_card))
+    if (nrow(K) > 0) {
+      E_value <- E_value + mean(K$value)
+      # for (i in 1:nrow(K)) {
+      #   # expected winning value
+      #   E_odds <- E_odds + dhyper(x = 1, m = 1, n = nrow(K)-1, k = 6)*K$value[i]
+      # }
+    }
+  } else {
+    K <- bind_rows(filter(unknown, grepl(card_suit(play_card),card), order > card_order(play_card)),
+      filter(unknown, grepl(pinta_suit,card)))
+    if (nrow(K) > 0) {
+      E_value <- E_value + mean(K$value)
+      # for (i in 1:nrow(K)) {
+      # # expected winning value
+      #   E_odds <- E_odds + dhyper(x = 1, m = 1, n = K-1, k = 6)*K$value[i]
+      # }
+    }
+  }
+  return(E_value)
+}
+#
 # Make a better than random card pick for stage 1 of the game
 smart_pick <- function(hand, known_cards, pinta_suit, playFirst = TRUE, played_card=NULL, actionCard = NULL) {
   # known_cards: besides the input hand these cards are known to all players at this point
@@ -128,6 +200,7 @@ smart_pick <- function(hand, known_cards, pinta_suit, playFirst = TRUE, played_c
   if (playFirst) { # player opens round
     for (c in 1:length(cardPool)) { # evaluate each card in hand or selected action card
       cardValue <- card_value(penalty_df$card[c])
+      
       # check whether player B can produce cante or tute if he wins the hand
       canteRisk <- computeCanteRisk(play_card = penalty_df$card[c], unknown = unknown, pinta_suit = pinta_suit)
       penalty_df$penalty[c] <- penalty_df$penalty[c] - canteRisk
@@ -135,22 +208,28 @@ smart_pick <- function(hand, known_cards, pinta_suit, playFirst = TRUE, played_c
       if (grepl("caballo", penalty_df$card[c])) {
         if ((paste0(card_suit(penalty_df$card[c]),"_rey") %in% hand) & 
             !((paste0(card_suit(penalty_df$card[c]),"_rey") %in% known_cards) | (paste0(card_suit(penalty_df$card[c]),"_caballo") %in% known_cards))) {
-          penalty_df$penalty[c] <- -20 
-        } else if (paste0(card_suit(penalty_df$card[c]),"_rey") %in% known_cards) {penalty_df$penalty[c] <- -3
-        } else penalty_df$penalty[c] <- -10
+          if (card_suit(penalty_df$card[c]) == pinta_suit) { # pinta
+            penalty_df$penalty[c] <- penalty_df$penalty[c] - 40 # got the cante pair and I have not yet called this cante
+          } else {
+            penalty_df$penalty[c] <- penalty_df$penalty[c] - 20 # got the cante pair and I have not yet called this cante
+          }
+        } else if (paste0(card_suit(penalty_df$card[c]),"_rey") %in% known_cards) {
+          penalty_df$penalty[c] <- penalty_df$penalty[c] - 3 # I know I can't call this cante
+        } else penalty_df$penalty[c] <- penalty_df$penalty[c] # I don't have the cante pair. 
       }
       if (grepl("rey", penalty_df$card[c])) {
         if ((paste0(card_suit(penalty_df$card[c]),"_caballo") %in% hand) & 
             !((paste0(card_suit(penalty_df$card[c]),"_caballo") %in% known_cards) | (paste0(card_suit(penalty_df$card[c]),"_rey") %in% known_cards))) {
-          penalty_df$penalty[c] <- -20 
-        } else if (paste0(card_suit(penalty_df$card[c]),"_caballo") %in% known_cards) {penalty_df$penalty[c] <- -4
-        } else penalty_df$penalty[c] <- -10    
+          penalty_df$penalty[c] <- -20  # got the cante pair and I have not yet called this cante
+        } else if (paste0(card_suit(penalty_df$card[c]),"_caballo") %in% known_cards) {
+          penalty_df$penalty[c] <- -4  # I know I can't call this cante
+        } else penalty_df$penalty[c]  # I don't have the cante pair.   
       }  
       # for each card, compute how many can still beat it
       # same suit, higher value
       # pinta suit, any value unless card has pinta suit
       if (card_suit(penalty_df$card[c]) == pinta_suit) {
-        penalty_df$penalty[c] <- penalty_df$penalty[c] - 10 # monte +10 potential value
+        penalty_df$penalty[c] <- penalty_df$penalty[c] - 10 # risk of losing monte +10 points 
         penalty_df$penalty[c] <- penalty_df$penalty[c] + 2*sum(str_count(unkwown$card, "caballo|rey")) - 16
         penalty_df$penalty[c] <- penalty_df$penalty[c] - length(filter(unkwown, grepl(pinta_suit,card), value > cardValue)$value)
       } else {
@@ -270,7 +349,7 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
   cards_state <- mutate(cards_df, State = ifelse(card %in% handA, "A", ifelse(card %in% known_cards, "K", ""))) %>%
     mutate(State = ifelse(grepl(pinta_suit,card), paste0("P",State), State)) %>%
     select(-value)
-  data_rele <- data.frame(State = paste(cards_state$State, collapse = ","), 
+  data_rele <- data.frame(State = paste0(paste(cards_state$State, collapse = ","),",",1), 
                           Action = "",
                           Reward = 0,
                           NewState = "",
@@ -572,7 +651,7 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
     data_rele$Action[act] <- playA
     data_rele$Reward[act] <- pointsA - pointsB
     act <- act + 1
-    data_rele[act,]$State <- data_rele$NewState[act-1]
+    data_rele[act,]$State <- paste0(data_rele$NewState[act-1],",",act)
     data_rele$Details[act] <- paste("",paste0("drawA_",drawA),paste0("drawB_",drawB), collapse = ";")
     data_rele$Hand[act] <- paste(handA, collapse = ",")
     #
@@ -727,7 +806,7 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
     data_rele$Details[act] <- paste(data_rele$Details[act], paste0("playA_",playA), paste0("playB_",playB), collapse = ";")
     if (act < 20) {
       act <- act + 1
-      data_rele[act,]$State <- data_rele$NewState[act-1]
+      data_rele[act,]$State <- paste0(data_rele$NewState[act-1],",",act)
       data_rele$Details[act] <- ""
       data_rele$Hand[act] <- paste(handA, collapse = ",")
     }
@@ -760,24 +839,6 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
   
 }
 #
-# transform State sequence into cards
-state2cards <- function(state) {
-  
-  # state <- games$State[10]
-  # state <- this_game$State[10]
-  
-  state_df <- data.frame(State = str_split(state,",")[[1]], stringsAsFactors = FALSE)
-  state_p <- bind_cols(cards_df, state_df)
-  
-  pinta <- str_split(filter(state_p, grepl("P",State))$card[1], "_")[[1]][1]
-  handA <- filter(state_p, grepl("A",State))$card
-  known_cards <- filter(state_p, grepl("K",State))$card
-  
-  return(list(handA=handA,pinta=pinta,known_cards=known_cards))
-} 
-# vectorize it
-state2cards_vector <- Vectorize(state2cards)
-#
 # Action reward for player A
 actionReward <- function(state, action) {
   
@@ -785,12 +846,13 @@ actionReward <- function(state, action) {
   hand <- input_cards$handA
   pinta_suit <- input_cards$pinta
   known_cards <- input_cards$known_cards
+  turn <- input_cards$turn
   
   # compute reward for a given action: Consider tutes, cantes, etc.
   # action <- hand[1]
-  if (length(hand) < 6) {
+  if (turn >= 15) { # second phase of the game
     reward <- smart_pick2(hand = hand, known_cards = known_cards, pinta_suit = pinta_suit, playFirst = TRUE, played_card = NULL, actionCard = action)$penalty
-  } else { # improve this. There must be a way to differentiate which phase of the game we're in
+  } else { # initial stage where players can call cantes, etc.
     reward <- smart_pick(hand = hand, known_cards = known_cards, pinta_suit = pinta_suit, playFirst = TRUE, played_card = NULL, actionCard = action)$penalty
   }
   
@@ -801,6 +863,20 @@ actionReward <- function(state, action) {
   out <- list(NextState = next_state, Reward = reward)
   return(out)
 }
+#
+# checking probabilities and risks
+this_state <- state2cards(this_game$State[15])
+hand <- this_state$handA
+known_cards <- this_state$known_cards
+pinta_suit <- this_state$pinta
+unknown <- filter(cards_df, !(card %in% c(hand,known_cards)))
+# Expected point loss
+for (c in hand) {
+  #print(paste0(c,": ",round(computeCanteRisk(play_card = c, unknown = unknown, pinta_suit = pinta_suit),3)))
+  print(paste0(c,": ",round(expectedValueAdded(play_card = c, unknown = unknown, pinta_suit = pinta_suit),3)))
+}
+# expected value
+round(expectedValue(play_card = hand[1], unknown = unknown, pinta_suit = pinta_suit),3)
 
 
 
