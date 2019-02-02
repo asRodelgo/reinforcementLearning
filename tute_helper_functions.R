@@ -51,8 +51,8 @@ card_number <- function(card) {
 }
 #
 # return the value of a given card
-card_value <- function(card) {
-  v <- filter(cards_df, card == card)$value[1]
+card_value <- function(c) {
+  v <- filter(cards_df, card == c)$value
   return(v)
 }
 #
@@ -198,37 +198,53 @@ expectedValue <- function(hand = hand, play_card = card, unknown = unknown, pint
   unknown <- mutate(unknown, order = card_order.vector(card))
   hand_f <- hand[-which(play_card %in% hand)]
   E_value <- 0
+  points <- 0
+  K <- data.frame()
   for (s in suits) {
-    if (card_suit(play_card) == pinta_suit) { # if suit is pinta
-      K <- filter(unknown, grepl(card_suit(play_card),card), order > card_order(play_card))
-      if (nrow(K) > 0) prob_win <- dhyper(x = 1, m = nrow(K), n = N-nrow(K), k = 6) else prob_win <- 0
+    if (s == pinta_suit) { # if suit is pinta
+      if (card_suit(play_card) == pinta_suit) {
+        if (nrow(K) > 0) { 
+          K <- bind_rows(K, filter(unknown, grepl(card_suit(play_card),card), order > card_order(play_card)))
+        } else K <- filter(unknown, grepl(card_suit(play_card),card), order > card_order(play_card))
+      } 
     } else {
-      K <- bind_rows(filter(unknown, grepl(card_suit(play_card),card), order > card_order(play_card)),
-                     filter(unknown, grepl(pinta_suit,card)))
-      if (nrow(K) > 0) prob_win <- dhyper(x = 1, m = nrow(K), n = N-nrow(K), k = 6) else prob_win <- 0
+      if (card_suit(play_card) == s) {
+        if (nrow(K) > 0) { 
+          K <- bind_rows(K, filter(unknown, grepl(s,card), order > card_order(play_card)))
+        } else K <- filter(unknown, grepl(s,card), order > card_order(play_card))
+      } else {
+        if (nrow(K) > 0) {
+          K <- bind_rows(K, filter(unknown, grepl(s,card)))
+        } else K <- filter(unknown, grepl(s,card))
+      }
     }
-    E_value <- E_value + card_value(play_card)*prob_win
-    # factor in cantes
-    if ((paste0(s,"_caballo") == play_card) & (paste0(s,"_rey") %in% hand_f)) { # potential cante
-      if (card_suit(play_card) == pinta_suit) E_value <- E_value - 40 else E_value <- E_value - 20
-    } else if ((paste0(s,"_rey") == play_card) & (paste0(s,"_caballo") %in% hand_f)) {
-      if (card_suit(play_card) == pinta_suit) E_value <- E_value - 40 else E_value <- E_value - 20
-    } else if (paste0(s,"_caballo") %in% hand_f) {
-      K <- filter(unknown, paste0(s,"_rey") %in% card)
-      prob_cantepair <- nrow(K)/N # assuming payer A wins the hand
-      if (card_suit(play_card) == pinta_suit) E_value <- E_value + prob_cantepair*40 else E_value <- E_value + prob_cantepair*20
-    } else if (paste0(s,"_rey") %in% hand_f) {
-      K <- filter(unknown, paste0(s,"_caballo") %in% card)
-      prob_cantepair <- nrow(K)/N
-      if (card_suit(play_card) == pinta_suit) E_value <- E_value + prob_cantepair*40 else E_value <- E_value + prob_cantepair*20 
-    }
-    #### factor in tutes: For later
-    # for (figure in c("caballo","rey")) {
-    #   if (sum(str_count(unknown$card,figure)) == 4) { # tute de reyes
-    #     prob_tute <- dhyper(x = 4, m = 4, n = N-4, k = 6) # conditional prob of player B having winning cards besides the cante cards (sample = 6-2 = 4)  
-    #     unknown_f <- filter(unknown, !(grepl(figure,card)))
-    ####
   }
+  antiK <- filter(unknown, !(card %in% K$card))
+  points <- sum(K$value) + nrow(K)*card_value(play_card) - sum(antiK$value) - nrow(antiK)*card_value(play_card)
+  E_value <- points/nrow(unknown)
+  #if (nrow(K) > 0) prob_win <- sum(dhyper(x = 1:6, m = nrow(K), n = N-nrow(K), k = 6)) else prob_win <- 0
+  #E_value <- E_value + card_value(play_card)*prob_win
+  #
+  # factor in cantes
+  if ((paste0(s,"_caballo") == play_card) & (paste0(s,"_rey") %in% hand_f)) { # potential cante
+    if (card_suit(play_card) == pinta_suit) E_value <- E_value - 40 else E_value <- E_value - 20
+  } else if ((paste0(s,"_rey") == play_card) & (paste0(s,"_caballo") %in% hand_f)) {
+    if (card_suit(play_card) == pinta_suit) E_value <- E_value - 40 else E_value <- E_value - 20
+  } else if (paste0(s,"_caballo") %in% hand_f) {
+    K <- filter(unknown, paste0(s,"_rey") %in% card)
+    prob_cantepair <- nrow(K)/N # assuming payer A wins the hand
+    if (card_suit(play_card) == pinta_suit) E_value <- E_value + prob_cantepair*40 else E_value <- E_value + prob_cantepair*20
+  } else if (paste0(s,"_rey") %in% hand_f) {
+    K <- filter(unknown, paste0(s,"_caballo") %in% card)
+    prob_cantepair <- nrow(K)/N
+    if (card_suit(play_card) == pinta_suit) E_value <- E_value + prob_cantepair*40 else E_value <- E_value + prob_cantepair*20 
+  }
+  #### factor in tutes: For later
+  # for (figure in c("caballo","rey")) {
+  #   if (sum(str_count(unknown$card,figure)) == 4) { # tute de reyes
+  #     prob_tute <- dhyper(x = 4, m = 4, n = N-4, k = 6) # conditional prob of player B having winning cards besides the cante cards (sample = 6-2 = 4)  
+  #     unknown_f <- filter(unknown, !(grepl(figure,card)))
+  ####
 
   return(E_value)
 }
