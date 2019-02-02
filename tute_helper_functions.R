@@ -196,7 +196,7 @@ expectedValue <- function(hand = hand, play_card = card, unknown = unknown, pint
   suits <- c("oros","copas","espadas","bastos")
   N <- nrow(unknown)
   unknown <- mutate(unknown, order = card_order.vector(card))
-  hand_f <- hand[-which(play_card %in% hand)]
+  hand_f <- hand[-which(hand == play_card)]
   E_value <- 0
   points <- 0
   K <- data.frame()
@@ -226,19 +226,33 @@ expectedValue <- function(hand = hand, play_card = card, unknown = unknown, pint
   #E_value <- E_value + card_value(play_card)*prob_win
   #
   # factor in cantes
-  if ((paste0(s,"_caballo") == play_card) & (paste0(s,"_rey") %in% hand_f)) { # potential cante
-    if (card_suit(play_card) == pinta_suit) E_value <- E_value - 40 else E_value <- E_value - 20
-  } else if ((paste0(s,"_rey") == play_card) & (paste0(s,"_caballo") %in% hand_f)) {
-    if (card_suit(play_card) == pinta_suit) E_value <- E_value - 40 else E_value <- E_value - 20
-  } else if (paste0(s,"_caballo") %in% hand_f) {
-    K <- filter(unknown, paste0(s,"_rey") %in% card)
-    prob_cantepair <- nrow(K)/N # assuming payer A wins the hand
-    if (card_suit(play_card) == pinta_suit) E_value <- E_value + prob_cantepair*40 else E_value <- E_value + prob_cantepair*20
-  } else if (paste0(s,"_rey") %in% hand_f) {
-    K <- filter(unknown, paste0(s,"_caballo") %in% card)
-    prob_cantepair <- nrow(K)/N
-    if (card_suit(play_card) == pinta_suit) E_value <- E_value + prob_cantepair*40 else E_value <- E_value + prob_cantepair*20 
+  for (s in suits) {
+    if ((paste0(s,"_caballo") == play_card) & (paste0(s,"_rey") %in% hand_f) & !(paste0(s,"_rey") %in% unknown$card)) { # potential cante
+      if (s == pinta_suit) E_value <- E_value - 40 else E_value <- E_value - 20
+    } else if ((paste0(s,"_rey") == play_card) & (paste0(s,"_caballo") %in% hand_f) & !(paste0(s,"_caballo") %in% unknown$card)) {
+      if (s == pinta_suit) E_value <- E_value - 40 else E_value <- E_value - 20
+    } else if ((paste0(s,"_caballo") %in% hand_f) & (paste0(s,"_rey") %in% hand_f)  & !(paste0(s,"_rey") %in% unknown$card)) {
+      prob_cantepair <- nrow(K)/N # assuming payer A wins the hand
+      if (s == pinta_suit) E_value <- E_value + prob_cantepair*40 else E_value <- E_value + prob_cantepair*20
+    } else if (paste0(s,"_caballo") %in% hand_f) {
+      K <- filter(unknown, card == paste0(s,"_rey"))
+      prob_cantepair <- nrow(K)/N # assuming payer A wins the hand
+      if (s == pinta_suit) E_value <- E_value + prob_cantepair*40 else E_value <- E_value + prob_cantepair*20
+    } else if (paste0(s,"_rey") %in% hand_f) {
+      K <- filter(unknown, card == paste0(s,"_caballo"))
+      prob_cantepair <- nrow(K)/N
+      if (s == pinta_suit) E_value <- E_value + prob_cantepair*40 else E_value <- E_value + prob_cantepair*20 
+    } else if (paste0(s,"_caballo") == play_card) {
+      K <- filter(unknown, card == paste0(s,"_rey"))
+      prob_cantepair <- nrow(K)/N # assuming payer A wins the hand
+      if (s == pinta_suit) E_value <- E_value - prob_cantepair*40 else E_value <- E_value - prob_cantepair*20
+    } else if (paste0(s,"_rey") == play_card) {
+      K <- filter(unknown, card == paste0(s,"_caballo"))
+      prob_cantepair <- nrow(K)/N
+      if (s == pinta_suit) E_value <- E_value - prob_cantepair*40 else E_value <- E_value - prob_cantepair*20 
+    }
   }
+  
   #### factor in tutes: For later
   # for (figure in c("caballo","rey")) {
   #   if (sum(str_count(unknown$card,figure)) == 4) { # tute de reyes
@@ -924,16 +938,16 @@ actionReward <- function(state, action) {
 }
 #
 # checking probabilities and risks
-this_state <- state2cards(this_game$State[1])
+this_state <- state2cards(this_game$State[15])
 hand <- this_state$handA
 known_cards <- this_state$known_cards
 pinta_suit <- this_state$pinta
 unknown <- filter(cards_df, !(card %in% c(hand,known_cards)))
 # Expected point loss
 for (c in hand) {
-  print(paste0(c,": ",round(computeCanteRisk(play_card = c, unknown = unknown, pinta_suit = pinta_suit),3)))
+  #print(paste0(c,": ",round(computeCanteRisk(play_card = c, unknown = unknown, pinta_suit = pinta_suit),3)))
   print(paste0(c,": ",round(expectedValue(hand = hand, play_card = c, unknown = unknown, pinta_suit = pinta_suit),3)))
-  print(paste0(c,": ",round(expectedValueAdded(play_card = c, unknown = unknown, pinta_suit = pinta_suit),3)))
+  #print(paste0(c,": ",round(expectedValueAdded(play_card = c, unknown = unknown, pinta_suit = pinta_suit),3)))
 }
 # expected value from player A action
 round(expectedValue(hand = hand, play_card = hand[1], unknown = unknown, pinta_suit = pinta_suit),3)
