@@ -77,90 +77,74 @@ state2cards <- function(state) {
 state2cards_vector <- Vectorize(state2cards)
 #
 # Calculate the risk of an opponent calling a cante or tute
+# Calculate the risk of an opponent calling a cante or tute
 computeCanteRisk <- function(play_card = card, unknown = unknown, pinta_suit = pinta_suit) {
   
   suits <- c("oros","copas","espadas","bastos")
   N <- nrow(unknown)
   unknown <- mutate(unknown, order = card_order.vector(card))
-  
-  risk <- 0
   E_risk <- 0
-  for (s in suits[-which(suits == card_suit(play_card))]) {
-    if ((paste0(s,"_caballo") %in% unknown$card) & (paste0(s,"_rey") %in% unknown$card)) { # potential cante
-      # using hypergeometric distribution: Probability of drawing this cante in a size 6 sample without replacement
-      #prob <- 30/(N*(N-1)) 
-      # x <- number of successes (cante = 2: caballo and rey from same suit)
-      # m <- Total number of successful cards in unknown deck (cante = 2: caballo and rey from same suit)
-      # n <- Total number of unsuccessful cards in unknown deck
-      # k <- sample (player B holds a hand of 6 cards)
-      prob_cante <- dhyper(x = 2, m = 2, n = N-2, k = 6) # prob of player B holding this suit's cante in his hand
-        # # simulate
-        # count <- 0
-        # for (i in 1:1000){
-        #   sb <- sample(unknown$card,6)
-        #   count <- count + length(sb[which((paste0(s,"_caballo") %in% sb) & (paste0(s,"_rey") %in% sb))])
-        # }
-        # sim_prob_cante <- count/1000
-        # #
-      unknown_f <- filter(unknown, !(card %in% c(paste0(s,"_caballo"), paste0(s,"_rey"))))
-      if (card_suit(play_card) == pinta_suit) { # if suit is pinta
-        K <- length(filter(unknown_f, grepl(card_suit(play_card),card), order > card_order(play_card))$card)
-        if (K > 0) { # player B can play winning cards without using cante cards
-          risk <- max(risk, risk + 40)
-          cond_prob_winner <- sum(dhyper(x = 1:K, m = K, n = N-2, k = 4)) # conditional prob of player B having winning cards besides the cante cards (sample = 6-2 = 4)
-          # times prob of drawing cante gives: 
-          prob <- cond_prob_winner*prob_cante
-          # expected risk
-          E_risk <- E_risk + prob*40
-        }
+  points <- 0
+  K <- data.frame()
+  for (s in suits) {
+    if (s == pinta_suit) { # if suit is pinta
+      if (card_suit(play_card) == pinta_suit) {
+        if (nrow(K) > 0) {
+          K <- bind_rows(K, filter(unknown, grepl(card_suit(play_card),card), order > card_order(play_card)))
+        } else K <- filter(unknown, grepl(card_suit(play_card),card), order > card_order(play_card))
+      }
+    } else {
+      if (card_suit(play_card) == s) {
+        if (nrow(K) > 0) {
+          K <- bind_rows(K, filter(unknown, grepl(s,card), order > card_order(play_card)))
+        } else K <- filter(unknown, grepl(s,card), order > card_order(play_card))
       } else {
-        K <- length(filter(unknown_f, grepl(card_suit(play_card),card), order > card_order(play_card))) +
-                           length(filter(unknown_f, grepl(pinta_suit,card)))
-        if (K > 0) { # player B can play winning cards without using cante cards
-          risk <- max(risk, risk + 20)
-          cond_prob_winner <- sum(dhyper(x = 1:K, m = K, n = N-2, k = 4)) # conditional prob of player B having winning cards besides the cante cards (sample = 6-2 = 4)
-          # times prob of drawing cante gives: 
-          prob <- cond_prob_winner*prob_cante
-          # expected risk
-          E_risk <- E_risk + prob*20
-        }
+        if (nrow(K) > 0) {
+          K <- bind_rows(K, filter(unknown, grepl(s,card)))
+        } else K <- filter(unknown, grepl(s,card))
       }
     }
   }
-  # implement Tute risk loop
+  # K = unknwon cards playerA beats with this card
+  # antiK = unknwon cards that beat this card
+  antiK <- filter(unknown, !(card %in% K$card))
+  #
+  for (s in suits) {
+    # potential cante
+    if ((paste0(s,"_caballo") %in% unknown$card) & (paste0(s,"_rey") %in% unknown$card)) { # potential cante
+      prob_cante <- dhyper(x = 2, m = 2, n = N-2, k = 6) # prob of player B holding this suit's cante in his hand
+      antiK <- filter(antiK, !(card %in% c(paste0(s,"_caballo"), paste0(s,"_rey"))))
+      if (nrow(antiK) > 0) { # player B can play winning cards without using cante cards
+        #risk <- max(risk, risk + 40)
+        cond_prob_winner <- sum(dhyper(x = 1:nrow(antiK), m = nrow(antiK), n = N-2, k = 4)) # conditional prob of player B having winning cards besides the cante cards (sample = 6-2 = 4)
+        # times prob of drawing cante gives:
+        prob <- cond_prob_winner*prob_cante
+        # expected risk
+        if (s == pinta_suit) E_risk <- E_risk + prob*40 else E_risk <- E_risk + prob*20
+      }
+    }
+  }
+  # potential Tute
   for (figure in c("caballo","rey")) {
     if (sum(str_count(unknown$card,figure)) == 4) { # tute de reyes
-      prob_tute <- dhyper(x = 4, m = 4, n = N-4, k = 6) # conditional prob of player B having winning cards besides the cante cards (sample = 6-2 = 4)  
-      unknown_f <- filter(unknown, !(grepl(figure,card)))
-      if (card_suit(play_card) == pinta_suit) { # if suit is pinta
-        K <- length(filter(unknown_f, grepl(card_suit(play_card),card), order > card_order(play_card))$card)
-        if (K > 0) { # player B can play winning cards without using cante cards
-          risk <- max(risk, risk + 200)
-          cond_prob_winner <- sum(dhyper(x = 1:K, m = K, n = N-4, k = 2)) # conditional prob of player B having winning cards besides the cante cards (sample = 6-2 = 4)
-          # times prob of drawing cante gives: 
-          prob <- cond_prob_winner*prob_tute
-          # expected risk
-          E_risk <- E_risk + prob*200
-        }
-      } else {
-        K <- length(filter(unknown_f, grepl(card_suit(play_card),card), order > card_order(play_card))) +
-          length(filter(unknown_f, grepl(pinta_suit,card)))
-        if (K > 0) { # player B can play winning cards without using cante cards
-          risk <- max(risk, risk + 200)
-          cond_prob_winner <- sum(dhyper(x = 1:K, m = K, n = N-4, k = 2)) # conditional prob of player B having winning cards besides the cante cards (sample = 6-2 = 4)
-          # times prob of drawing cante gives: 
-          prob <- cond_prob_winner*prob_tute
-          # expected risk
-          E_risk <- E_risk + prob*200
-        }
+      prob_tute <- dhyper(x = 4, m = 4, n = N-4, k = 6) # conditional prob of player B having winning cards besides the cante cards (sample = 6-2 = 4)
+      antiK <- filter(antiK, !(grepl(figure,card)))
+      if (nrow(antiK) > 0) {
+        cond_prob_winner <- sum(dhyper(x = 1:nrow(antiK), m = nrow(antiK), n = N-4, k = 2)) # conditional prob of player B having winning cards besides the cante cards (sample = 6-2 = 4)
+        # times prob of drawing cante gives:
+        prob <- cond_prob_winner*prob_tute
+        # expected risk
+        E_risk <- E_risk + prob*200
       }
     }
   }
-
   return(E_risk)
 }
+
 #
-# Calculate the expected gained value from player B of a played card by player A 
+# Calculate the expected gained value out from player B of a played card by player A. Assuming Player B 
+# plays smart, i.e., maximizes his reward. Without this assumption, it's just averaging the
+# value of unknown cards that can beat player A's card.
 expectedValueAdded <- function(play_card = card, unknown = unknown, pinta_suit = pinta_suit) {
   
   suits <- c("oros","copas","espadas","bastos")
@@ -219,6 +203,8 @@ expectedValue <- function(hand = hand, play_card = card, unknown = unknown, pint
       }
     }
   }
+  # K = unknwon cards playerA beats with this card
+  # antiK = unknwon cards that beat this card
   antiK <- filter(unknown, !(card %in% K$card))
   points <- sum(K$value) + nrow(K)*card_value(play_card) - sum(antiK$value) - nrow(antiK)*card_value(play_card)
   E_value <- points/nrow(unknown)
@@ -937,22 +923,3 @@ actionReward <- function(state, action) {
   return(out)
 }
 #
-# checking probabilities and risks
-this_state <- state2cards(this_game$State[15])
-hand <- this_state$handA
-known_cards <- this_state$known_cards
-pinta_suit <- this_state$pinta
-unknown <- filter(cards_df, !(card %in% c(hand,known_cards)))
-# Expected point loss
-for (c in hand) {
-  #print(paste0(c,": ",round(computeCanteRisk(play_card = c, unknown = unknown, pinta_suit = pinta_suit),3)))
-  print(paste0(c,": ",round(expectedValue(hand = hand, play_card = c, unknown = unknown, pinta_suit = pinta_suit),3)))
-  #print(paste0(c,": ",round(expectedValueAdded(play_card = c, unknown = unknown, pinta_suit = pinta_suit),3)))
-}
-# expected value from player A action
-round(expectedValue(hand = hand, play_card = hand[1], unknown = unknown, pinta_suit = pinta_suit),3)
-# expected value added from player B
-round(expectedValueAdded(play_card = hand[1], unknown = unknown, pinta_suit = pinta_suit),3)
-
-
-
