@@ -125,19 +125,19 @@ computeCanteRisk <- function(play_card = card, unknown = unknown, pinta_suit = p
     }
   }
   # potential Tute
-  for (figure in c("caballo","rey")) {
-    if (sum(str_count(unknown$card,figure)) == 4) { # tute de reyes
-      prob_tute <- dhyper(x = 4, m = 4, n = N-4, k = 6) # conditional prob of player B having winning cards besides the cante cards (sample = 6-2 = 4)
-      antiK <- filter(antiK, !(grepl(figure,card)))
-      if (nrow(antiK) > 0) {
-        cond_prob_winner <- sum(dhyper(x = 1:nrow(antiK), m = nrow(antiK), n = N-4, k = 2)) # conditional prob of player B having winning cards besides the cante cards (sample = 6-2 = 4)
-        # times prob of drawing cante gives:
-        prob <- cond_prob_winner*prob_tute
-        # expected risk
-        E_risk <- E_risk + prob*200
-      }
-    }
-  }
+  # for (figure in c("caballo","rey")) {
+  #   if (sum(str_count(unknown$card,figure)) == 4) { # tute de reyes
+  #     prob_tute <- dhyper(x = 4, m = 4, n = N-4, k = 6) # conditional prob of player B having winning cards besides the cante cards (sample = 6-2 = 4)
+  #     antiK <- filter(antiK, !(grepl(figure,card)))
+  #     if (nrow(antiK) > 0) {
+  #       cond_prob_winner <- sum(dhyper(x = 1:nrow(antiK), m = nrow(antiK), n = N-4, k = 2)) # conditional prob of player B having winning cards besides the cante cards (sample = 6-2 = 4)
+  #       # times prob of drawing cante gives:
+  #       prob <- cond_prob_winner*prob_tute
+  #       # expected risk
+  #       E_risk <- E_risk + prob*200
+  #     }
+  #   }
+  # }
   return(E_risk)
 }
 
@@ -238,7 +238,10 @@ expectedValue <- function(hand = hand, play_card = card, unknown = unknown, pint
       if (s == pinta_suit) E_value <- E_value - prob_cantepair*40 else E_value <- E_value - prob_cantepair*20 
     }
   }
-  
+  ### factor in 10 de monte
+  # how many cards does this card beat? The more cards it can beat, the higher the penalty (the bigger incentive to keep it)
+  pot_monte <- 10*nrow(K)/N
+  E_value <- E_value - pot_monte
   #### factor in tutes: For later
   # for (figure in c("caballo","rey")) {
   #   if (sum(str_count(unknown$card,figure)) == 4) { # tute de reyes
