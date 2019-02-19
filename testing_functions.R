@@ -1,6 +1,6 @@
 ## test functions
 # checking probabilities and risks
-this_state <- state2cards(this_game$State[16])
+this_state <- state2cards(this_game$State[1])
 hand <- this_state$handA
 c <- hand[3]
 known_cards <- this_state$known_cards
@@ -12,7 +12,7 @@ for (c in hand) {
   this_expValue <- round(expectedValue(hand = hand, play_card = c, unknown = unknown, pinta_suit = pinta_suit),3)
   #print(paste0(c,": ",this_risk))
   #print(paste0(c,": ",this_expValue))
-  print(paste0(c,": ",this_expValue-this_risk))
+  print(paste0(c,": ",this_expValue, " / ",this_risk, " / ", this_expValue-this_risk))
 }
 # expected value from player A action
 round(expectedValue(hand = hand, play_card = hand[1], unknown = unknown, pinta_suit = pinta_suit),3)

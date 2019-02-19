@@ -76,7 +76,17 @@ state2cards <- function(state) {
 # vectorize it
 state2cards_vector <- Vectorize(state2cards)
 #
-# Calculate the risk of an opponent calling a cante or tute
+# Transform cards situation to state sequence
+cards2state <- function(handA, pinta_suit, known_cards, turn) {
+  
+  cards_state <- mutate(cards_df, State = ifelse(card %in% handA, "A", ifelse(card %in% known_cards, "K", ""))) %>%
+    mutate(State = ifelse(grepl(pinta_suit,card), paste0("P",State), State)) %>%
+    select(-value)
+  state = paste0(paste(cards_state$State, collapse = ","),",",turn)
+  
+  return(state)
+} 
+
 # Calculate the risk of an opponent calling a cante or tute
 computeCanteRisk <- function(play_card = card, unknown = unknown, pinta_suit = pinta_suit) {
   
@@ -908,19 +918,30 @@ actionReward <- function(state, action) {
   hand <- input_cards$handA
   pinta_suit <- input_cards$pinta
   known_cards <- input_cards$known_cards
+  unknown <- filter(cards_df, !(card %in% c(hand,known_cards)))
   turn <- input_cards$turn
   
   # compute reward for a given action: Consider tutes, cantes, etc.
   # action <- hand[1]
   if (turn >= 15) { # second phase of the game
-    reward <- smart_pick2(hand = hand, known_cards = known_cards, pinta_suit = pinta_suit, playFirst = TRUE, played_card = NULL, actionCard = action)$penalty
+    this_risk <- round(computeCanteRisk(play_card = action, unknown = unknown, pinta_suit = pinta_suit),3)
+    this_expValue <- round(expectedValue(hand = hand, play_card = action, unknown = unknown, pinta_suit = pinta_suit),3)
+    reward <- this_expValue-this_risk
+    #reward <- smart_pick2(hand = hand, known_cards = known_cards, pinta_suit = pinta_suit, playFirst = TRUE, played_card = NULL, actionCard = action)$penalty
   } else { # initial stage where players can call cantes, etc.
-    reward <- smart_pick(hand = hand, known_cards = known_cards, pinta_suit = pinta_suit, playFirst = TRUE, played_card = NULL, actionCard = action)$penalty
+      this_risk <- round(computeCanteRisk(play_card = action, unknown = unknown, pinta_suit = pinta_suit),3)
+      this_expValue <- round(expectedValue(hand = hand, play_card = action, unknown = unknown, pinta_suit = pinta_suit),3)
+      reward <- this_expValue-this_risk
+    #reward <- smart_pick(hand = hand, known_cards = known_cards, pinta_suit = pinta_suit, playFirst = TRUE, played_card = NULL, actionCard = action)$penalty
   }
   
-  # compute Next State. Random. Do I use a seed to replicate same outcome?
-  
-  
+  # compute Next State. Random on the player B pick? What about calling cantes, etc? Do I use a seed to replicate same outcome?
+  # For every action, i.e., card played by player A, there are as many possible outcomes as unknown cards. Each with different probabilites and rewards
+  playB <- sample(unknown$card,1)
+  drawA <- sample(unknown$card[-which(playB %in% unknown$card)],1)
+  known_cards <- c(known_cards, action, playB)
+  turn <- turn + 1
+  #
   
   out <- list(NextState = next_state, Reward = reward)
   return(out)
