@@ -64,25 +64,26 @@ state2cards <- function(state) {
   
   state_df <- data.frame(State = str_split(state,",")[[1]], stringsAsFactors = FALSE)
   turn <- as.numeric(filter(state_df, State %in% seq(1,20,1)))
-  state_df <- filter(state_df, !(State %in% seq(1,20,1)))
+  play_first <- as.character(filter(state_df, grepl("W",State)))
+  state_df <- filter(state_df, !(State %in% seq(1,20,1)), !(grepl("W",State)))
   state_p <- bind_cols(cards_df, state_df)
   
   pinta <- str_split(filter(state_p, grepl("P",State))$card[1], "_")[[1]][1]
   handA <- filter(state_p, grepl("A",State))$card
   known_cards <- filter(state_p, grepl("K",State))$card
   
-  return(list(handA=handA,pinta=pinta,known_cards=known_cards,turn=turn))
+  return(list(handA=handA,pinta=pinta,known_cards=known_cards,turn=turn,play_first=play_first))
 } 
 # vectorize it
 state2cards_vector <- Vectorize(state2cards)
 #
 # Transform cards situation to state sequence
-cards2state <- function(handA, pinta_suit, known_cards, turn) {
+cards2state <- function(handA, pinta_suit, known_cards, turn, play_first = "A") {
   
   cards_state <- mutate(cards_df, State = ifelse(card %in% handA, "A", ifelse(card %in% known_cards, "K", ""))) %>%
     mutate(State = ifelse(grepl(pinta_suit,card), paste0("P",State), State)) %>%
     select(-value)
-  state = paste0(paste(cards_state$State, collapse = ","),",",turn)
+  state = paste0(paste(cards_state$State, collapse = ","),",",turn,",W",play_first)
   
   return(state)
 } 
@@ -421,7 +422,7 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
   cards_state <- mutate(cards_df, State = ifelse(card %in% handA, "A", ifelse(card %in% known_cards, "K", ""))) %>%
     mutate(State = ifelse(grepl(pinta_suit,card), paste0("P",State), State)) %>%
     select(-value)
-  data_rele <- data.frame(State = paste0(paste(cards_state$State, collapse = ","),",",1), 
+  data_rele <- data.frame(State = paste0(paste(cards_state$State, collapse = ","),",",1,",","WA"), 
                           Action = "",
                           Reward = 0,
                           NewState = "",
@@ -693,6 +694,7 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
     #
     # rule 4: Draw card
     if (winA) {
+      prev_hand_winner <- "A"
       drawA <- sample(deck_left,1)
       deck_left <- deck_left[-which(deck_left == drawA)]
       handA <- c(handA, drawA)
@@ -704,6 +706,7 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
         handB <- c(handB, drawB)
       }
     } else {
+      prev_hand_winner <- "B"
       drawB <- sample(deck_left,1)
       deck_left <- deck_left[-which(deck_left == drawB)]
       handB <- c(handB, drawB)
@@ -723,7 +726,7 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
     data_rele$Action[act] <- playA
     data_rele$Reward[act] <- pointsA - pointsB
     act <- act + 1
-    data_rele[act,]$State <- paste0(data_rele$NewState[act-1],",",act)
+    data_rele[act,]$State <- paste0(data_rele$NewState[act-1],",",act,",W",prev_hand_winner)
     data_rele$Details[act] <- paste("",paste0("drawA_",drawA),paste0("drawB_",drawB), collapse = ";")
     data_rele$Hand[act] <- paste(handA, collapse = ",")
     #
@@ -878,7 +881,7 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
     data_rele$Details[act] <- paste(data_rele$Details[act], paste0("playA_",playA), paste0("playB_",playB), collapse = ";")
     if (act < 20) {
       act <- act + 1
-      data_rele[act,]$State <- paste0(data_rele$NewState[act-1],",",act)
+      data_rele[act,]$State <- paste0(data_rele$NewState[act-1],",",act,",W",prev_hand_winner)
       data_rele$Details[act] <- ""
       data_rele$Hand[act] <- paste(handA, collapse = ",")
     }
@@ -936,7 +939,8 @@ actionReward <- function(state, action) {
   }
   
   # compute Next State. Random on the player B pick? What about calling cantes, etc? Do I use a seed to replicate same outcome?
-  # For every action, i.e., card played by player A, there are as many possible outcomes as unknown cards. Each with different probabilites and rewards
+  # For every action, i.e., card played by player A, there are as many possible outcomes as unknown cards, each with different probabilites and rewards
+  # Consider who played last at each state as it affects the next_state probabilities
   playB <- sample(unknown$card,1)
   drawA <- sample(unknown$card[-which(playB %in% unknown$card)],1)
   known_cards <- c(known_cards, action, playB)
