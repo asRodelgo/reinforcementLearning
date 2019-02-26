@@ -928,15 +928,60 @@ actionReward <- function(state, action) {
   
   # compute reward for a given action: Consider tutes, cantes, etc.
   # action <- hand[1]
-  if (play_first == "A") { # player A takes 1st turn
-    # for all possible ways player B can respond to "action" card played by A, calculate reward for A.
-    # return the card B plays that maximizes his reward (thus, minimizes player A reward) 
-    # and update new_state with action and card played by B 
-    for (cardB in unknown$card) {
-      # compute expected reward when player A plays "action" and player B plays "cardB"
+  if (turn < 15) { # Initial stage of the game. No need to follow through card suit
+    if (play_first == "A") { # player A takes 1st turn
+      # for all possible ways player B can respond to "action" card played by A, calculate reward for A.
+      # return the card B plays that maximizes his reward (thus, minimizes player A reward) 
+      # and update new_state with action and card played by B 
+      playA <- action
+      suitA <- card_suit(playA)
+      numberA <- card_number(playA)
+      valueA <- card_value(playA)
+      handA <- handA[-which(handA == playA)]
+      for (playB in unknown$card) {
+        # compute expected reward when player A plays "action" and player B plays "cardB"
+        handB <- handB[-which(handB == playB)]
+        suitB <- card_suit(playB)
+        numberB <- card_number(playB)
+        valueB <- card_value(playB)
+        known_cards <- unique(c(known_cards,playA,playB))
+        #
+        if (suitA == suitB) { # same suit
+          if (order(numberA) < order(numberB)) {
+            pointsA <- pointsA + valueA + valueB
+            winA <- TRUE
+          } else {
+            pointsB <- pointsB + valueA + valueB
+            winA <- FALSE
+          }
+        } else {
+          if (suitA == pinta_suit) { # different suit
+            pointsA <- pointsA + valueA + valueB
+            winA <- TRUE
+          } else if (suitB == pinta_suit) { # different suit
+            pointsB <- pointsB + valueA + valueB
+            winA <- FALSE
+          } else {
+            pointsA <- pointsA + valueA + valueB
+            winA <- TRUE
+          }
+        }
+        reward <- pointsA - pointsB
+        # add cantes or tutes expected reward.
+        # For player A, I have complete information
+        
+        # For player B, I compute probabilities of cantes and tutes given playB and unknown cards
+        
+        
+      }
+    } else { # player B plays first
+      
     }
+  } else { # Second stage. Follow through is required. No cantes allowed anymore
     
-    
+  }
+  
+  
     if (turn >= 15) { # second phase of the game
       this_risk <- round(computeCanteRisk(play_card = action, unknown = unknown, pinta_suit = pinta_suit),3)
       this_expValue <- round(expectedValue(hand = hand, play_card = action, unknown = unknown, pinta_suit = pinta_suit),3)
