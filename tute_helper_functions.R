@@ -44,7 +44,8 @@ card_order.vector <- Vectorize(card_order)
 card_suit <- function(card) {
   return(str_split(card,"_")[[1]][1]) 
 }
-#
+# vectorize
+card_suit.vector <- Vectorize(card_suit)
 # return the number of a given card
 card_number <- function(card) {
   return(str_split(card,"_")[[1]][2]) 
@@ -919,10 +920,11 @@ actionReward <- function(state, action) {
   
   # state <- this_game$State[1]
   input_cards <- state2cards(state)
-  hand <- input_cards$handA
+  handA <- input_cards$handA
+  # action <- handA[1]
   pinta_suit <- input_cards$pinta
   known_cards <- input_cards$known_cards
-  unknown <- filter(cards_df, !(card %in% c(hand,known_cards)))
+  unknown <- filter(cards_df, !(card %in% c(handA,known_cards)))
   turn <- input_cards$turn
   play_first <- gsub("W","",input_cards$play_first)
   
@@ -938,9 +940,10 @@ actionReward <- function(state, action) {
       numberA <- card_number(playA)
       valueA <- card_value(playA)
       handA <- handA[-which(handA == playA)]
+      pointsA <- pointsB <- 0
       for (playB in unknown$card) {
         # compute expected reward when player A plays "action" and player B plays "cardB"
-        handB <- handB[-which(handB == playB)]
+        # playB <- unknown$card[1]
         suitB <- card_suit(playB)
         numberB <- card_number(playB)
         valueB <- card_value(playB)
@@ -967,10 +970,30 @@ actionReward <- function(state, action) {
           }
         }
         reward <- pointsA - pointsB
-        # add cantes or tutes expected reward.
-        # For player A, I have complete information
-        
-        # For player B, I compute probabilities of cantes and tutes given playB and unknown cards
+        # add cantes or tutes expected reward:
+        ## For player A, I have complete information
+        lost_cantes_suits <- unique(card_suit.vector(known_cards[which(grepl("caballo|rey",known_cards))]))
+        tuteA <- t(data.frame(str_split(handA, "_"))) %>%
+          data.frame(stringsAsFactors = FALSE) %>%
+          rename(suit = X1, number = X2) %>%
+          filter(!(suit %in% lost_cantes_suits)) %>% # don't consider cantes already scored or imposible to score
+          mutate(tute = ifelse(number %in% c("caballo","rey"),1,0)) %>%
+          group_by(suit) %>%
+          summarise(tute=sum(tute)) %>%
+          ungroup() %>%
+          filter(tute >=2) %>%
+          mutate(tute = ifelse(suit == pinta_suit,tute*2,tute)) %>%
+          arrange(desc(tute))
+        # check for tute
+        if (sum(str_count(handA, "caballo"))==4 | sum(str_count(handA, "rey"))==4) {
+          pointsA <- 200
+        }
+        # else check for cantes
+        if (nrow(tuteA)>0) {
+          known_cards <- c(known_cards, paste0(tuteA$suit[1],"_caballo"),paste0(tuteA$suit[1],"_rey"))
+        }
+        #
+        ## For player B, I compute probabilities of cantes and tutes given playB and unknown cards
         
         
       }
