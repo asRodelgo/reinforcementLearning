@@ -918,8 +918,8 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
 # Action reward for player A
 actionReward <- function(state, action) {
   
-  suits <- c("oros","copas","espadas","bastos")
-  # state <- this_game$State[15]
+  suits <- c("oros","copas","espadas","bastos") 
+  # state <- this_game$State[1]
   input_cards <- state2cards(state)
   handA <- input_cards$handA
   # action <- handA[2]
@@ -930,9 +930,8 @@ actionReward <- function(state, action) {
   unknown <- filter(cards_df, !(card %in% c(handA,known_cards)))
   turn <- input_cards$turn
   play_first <- gsub("W","",input_cards$play_first)
-  
+  #
   # compute reward for a given action: Consider tutes, cantes, etc.
-  # action <- hand[1]
   suitA <- card_suit(playA)
   numberA <- card_number(playA)
   valueA <- card_value(playA)
@@ -1049,9 +1048,9 @@ actionReward <- function(state, action) {
       } # end of playB loop
       
   } else { # Second stage. Follow through is required. No cantes allowed anymore
-    pointsA <- pointsB <- 0
     iter <- 1
     for (playB in unknown$card) {
+      pointsA <- pointsB <- 0
       # compute expected reward when player A plays "action" and player B plays "playB"
       suitB <- card_suit(playB)
       numberB <- card_number(playB)
@@ -1102,8 +1101,15 @@ actionReward <- function(state, action) {
   # compute Next State. Random on the player B pick? What about calling cantes, etc? Do I use a seed to replicate same outcome?
   # For every action, i.e., card played by player A, there are as many possible outcomes as unknown cards, each with different probabilites and rewards
   # Consider who played last at each state as it affects the next_state probabilities
-  reward <- min(reward_df$reward)
-  playB <- filter(reward_df, reward == min(reward))$cardB[1]
+  reward <- mean(reward_df$reward)
+  # factor in 10 de monte: how many cards does this card beat? The more cards it can beat, the higher the penalty (the bigger incentive to keep it)
+  if (grepl(pinta_suit, playA)) valueA <- valueA + 20
+  K <- mutate(cards_df, value = ifelse(grepl(pinta_suit, card), value + 20, value)) %>%
+    filter(valueA > value)
+  pot_monte <- 10*nrow(K)/40
+  reward <- reward - pot_monte
+  #
+  playB <- filter(reward_df, reward == min(reward_df$reward))$cardB[1]
   unknown <- filter(unknown,  !(card == playB))
   drawA <- sample(unknown$card,1)
   handA <- c(handA,drawA)
@@ -1115,7 +1121,10 @@ actionReward <- function(state, action) {
   #
   next_state <- cards2state(handA = handA, pinta_suit = pinta_suit, known_cards = known_cards, turn = turn, play_first = play_first) 
   #
-  out <- list(NextState = next_state, Reward = reward)
+  #out <- list(NextState = next_state, Reward = reward)
+  #out <- list(NextState = next_state, Reward_df = reward_df)
+  out <- list(NextState = next_state, Min_Reward = min(reward_df$reward)-pot_monte, 
+              Max_Reward = max(reward_df$reward)-pot_monte, Avg_Reward = mean(reward_df$reward)-pot_monte)
   
   return(out)
 }
