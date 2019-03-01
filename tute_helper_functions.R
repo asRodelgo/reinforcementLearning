@@ -939,7 +939,7 @@ actionReward <- function(state, action) {
   handA <- handA[-which(handA == playA)]
   #
   # For player A, I have complete information on tutes/cantes
-  lost_cantes_suits <- unique(card_suit.vector(known_cards[which(grepl("caballo|rey",known_cards))])) # suits for which cantes are not available
+  lost_cantes_suits <- as.character(unique(card_suit.vector(known_cards[which(grepl("caballo|rey",known_cards))]))) # suits for which cantes are not available
   tuteA <- t(data.frame(str_split(handA, "_"))) %>%
     data.frame(stringsAsFactors = FALSE) %>%
     rename(suit = X1, number = X2) %>%
@@ -1025,7 +1025,7 @@ actionReward <- function(state, action) {
           ## For player B, I compute probabilities of cantes and tutes given playB and unknown cards
           unknown_aux <- filter(unknown, !(card == playB))
           # cantes
-          for (s in suits[-which(suits %in% lost_cantes_suits)]) {
+          for (s in suits[which(!(suits %in% lost_cantes_suits))]) {
             if ((paste0(s,"_caballo") %in% unknown_aux$card) & (paste0(s,"_rey") %in% unknown_aux$card)) { # potential cante
               prob_cante <- dhyper(x = 2, m = 2, n = nrow(unknown_aux)-2, k = 5) # prob of player B holding this suit's cante in his hand
               if (s == pinta_suit) pointsB <- pointsB + prob_cante*40 else pointsB <- pointsB + prob_cante*20
