@@ -919,10 +919,10 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
 actionReward <- function(state, action) {
   
   suits <- c("oros","copas","espadas","bastos") 
-  # state <- this_game$State[1]
+  # state <- this_game$State[12]
   input_cards <- state2cards(state)
   handA <- input_cards$handA
-  # action <- handA[2]
+  # action <- handA[1]
   playA <- action
   pinta_suit <- input_cards$pinta
   known_cards <- input_cards$known_cards
@@ -1121,11 +1121,42 @@ actionReward <- function(state, action) {
   #
   next_state <- cards2state(handA = handA, pinta_suit = pinta_suit, known_cards = known_cards, turn = turn, play_first = play_first) 
   #
-  #out <- list(NextState = next_state, Reward = reward)
+  out <- list(NextState = next_state, Reward = min(reward_df$reward)-pot_monte)
   #out <- list(NextState = next_state, Reward_df = reward_df)
-  out <- list(NextState = next_state, Min_Reward = min(reward_df$reward)-pot_monte, 
-              Max_Reward = max(reward_df$reward)-pot_monte, Avg_Reward = mean(reward_df$reward)-pot_monte)
+  #out <- list(NextState = next_state, Min_Reward = min(reward_df$reward)-pot_monte,Max_Reward = max(reward_df$reward)-pot_monte, Avg_Reward = mean(reward_df$reward)-pot_monte)
   
   return(out)
 }
 #
+play_tute2 <- function() {
+  # initial deck of cards
+  deck <- cards_df$card
+  # deal initial hands
+  handA <- sample(deck,6)
+  deck_left <- deck[-which(deck %in% handA)]
+  handB <- sample(deck_left,6)
+  deck_left <- deck_left[-which(deck_left %in% handB)]
+  pinta <- sample(deck_left,1)
+  deck_left <- deck_left[-which(deck_left %in% pinta)]
+  #
+  # start play: Loop while deck_left is not empty
+  total_pointsA <- 0
+  total_pointsB <- 0
+  #
+  pinta_suit <- str_split(pinta,"_")[[1]][1]
+  pinta_number <- str_split(pinta,"_")[[1]][2]
+  pinta_value <- filter(cards_df, card == pinta)$value
+  pinta2 <- paste0(pinta_suit,"_2")
+  pinta7 <- paste0(pinta_suit,"_7")
+  #
+  winA <- TRUE # player A starts
+  cantes <- c() # keep count of cantes by their suits
+  known_cards <- pinta # keep count of cards played
+  keep_on <- TRUE
+  #
+  
+  
+}
+
+
+
