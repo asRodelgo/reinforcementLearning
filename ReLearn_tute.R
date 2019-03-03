@@ -2,6 +2,7 @@
 #
 ## set up
 library(tidyverse)
+library(ReinforcementLearning)
 source("tute_helper_functions.R") # load helper_functions
 cards_df <- define_cards() # Define cards, values and their order
 cards_order <- data.frame(card = c(1,3,"rey","caballo","sota",7,6,5,4,2), order = seq(1,10,1), stringsAsFactors = FALSE)
@@ -57,4 +58,25 @@ match_acc <- as.data.frame(policy(model)[which(policy(model)=="espadas_sota")], 
 #   mutate(HandA = paste(state2cards(State)[[1]],collapse = ","))
 # esp1 <- mutate(esp1, match = ifelse(grepl("espadas_1",HandA),1,0))
 # sum(esp1$match)/nrow(esp1)
+
+####
+# Use environment function "actionReward" to create samples on which to train the model
+# to feed up the samples, we'll take a set of states generated from "play_tute" function
+#
+# generate a few thousand states
+games <- data.frame()
+num_games <- 2000
+for (g in 1:num_games) {
+  this_game <- play_tute(smartPlay = FALSE)
+  if (nrow(games) > 0) games <- bind_rows(games, this_game) else games <- this_game
+  if (g %in% seq(0,num_games,50)) print(paste0("games played: ",g))
+}
+#save(games, file = "sample_games.RData")
+load("sample_games.RData")
+states <- unique(games$State)
+actions <- cards_df$card
+# sample data
+data <- sampleExperience(N = 2, env = actionReward, states = states, actions = actions)
+
+
 
