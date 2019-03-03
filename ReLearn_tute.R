@@ -76,7 +76,22 @@ load("sample_games.RData")
 states <- unique(games$State)
 actions <- cards_df$card
 # sample data
-data <- sampleExperience(N = 2, env = actionReward, states = states, actions = actions)
+data <- sampleExperience(N = 20000, env = actionReward, states = states, actions = actions)
+#
+## Perform reinforcement learning
+# Define reinforcement learning parameters
+control <- list(alpha = 0.1, gamma = 0.5, epsilon = 0.1)
+# Perform reinforcement learning
+model <- ReinforcementLearning(data, s = "State", a = "Action", r = "Reward", 
+                               s_new = "NextState", control = control)
+
+# Print result
+print(model)
+policy(model)
+# The brute force approach is unmanageable so next step I need to simplify the states. Somehow find an invariant
+# function that reduces the number of possible states.
+# Example: 
+
 
 
 
