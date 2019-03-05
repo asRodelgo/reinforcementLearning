@@ -1052,8 +1052,10 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
   
 }
 #
-# Action reward for player A
-actionReward <- function(state, action) {
+# Action reward for player A. 
+# If player A responds to a card played by player B then playB = "played_card"
+# In this case both playA = action and playB are known
+actionReward <- function(state, action, played_card = NULL) {
   
   suits <- c("oros","copas","espadas","bastos") 
   # state <- this_game$State[12]
@@ -1096,16 +1098,14 @@ actionReward <- function(state, action) {
         mutate(tute = ifelse(suit == pinta_suit,tute*2,tute)) %>%
         arrange(desc(tute))
     }
-    
     #
-    N <- nrow(unknown)
+    if (!is.null(played_card) & (play_first == "B")) N <- 1 else N <- nrow(unknown)
     reward_df <- data.frame(cardA = rep(playA,N),cardB = rep("",N),reward = rep(0,N), stringsAsFactors = FALSE)
     if (turn < 15) { # Initial stage of the game. No need to follow through card suit
       # for all possible ways player B can respond to "action" card played by A, calculate reward for A.
       # return the card B plays that maximizes his reward (thus, minimizes player A reward) 
-      # and update new_state with action and card played by B 
-      iter <- 1
-      for (playB in unknown$card) {
+      # and update new_state with action and card played by B
+      if (!is.null(played_card) & (play_first == "B")) { # player A responds to card played by B
         pointsA <- pointsB <- 0
         #playB <- unknown$card[1]
         # compute expected reward when player A plays "action" and player B plays "playB"
@@ -1113,50 +1113,26 @@ actionReward <- function(state, action) {
         numberB <- card_number(playB)
         valueB <- card_value(playB)
         known_cards_aux <- unique(c(known_cards,playB))
-        #
-        if (play_first == "A") { # player A takes 1st turn
-          if (suitA == suitB) { # same suit
-            if (order(numberA) < order(numberB)) {
-              pointsA <- pointsA + valueA + valueB
-              winA <- TRUE
-            } else {
-              pointsB <- pointsB + valueA + valueB
-              winA <- FALSE
-            }
+        if (suitA == suitB) { # same suit
+          if (order(numberB) < order(numberA)) {
+            pointsB <- pointsB + valueA + valueB
+            winA <- FALSE
           } else {
-            if (suitA == pinta_suit) { # different suit
-              pointsA <- pointsA + valueA + valueB
-              winA <- TRUE
-            } else if (suitB == pinta_suit) { # different suit
-              pointsB <- pointsB + valueA + valueB
-              winA <- FALSE
-            } else {
-              pointsA <- pointsA + valueA + valueB
-              winA <- TRUE
-            }
+            pointsA <- pointsA + valueA + valueB
+            winA <- TRUE
           }
-        } else { # player B plays first
-          if (suitA == suitB) { # same suit
-            if (order(numberB) < order(numberA)) {
-              pointsB <- pointsB + valueA + valueB
-              winA <- FALSE
-            } else {
-              pointsA <- pointsA + valueA + valueB
-              winA <- TRUE
-            }
+        } else {
+          if (suitB == pinta_suit) { # different suit
+            pointsB <- pointsB + valueA + valueB
+            winA <- FALSE
+          } else if (suitA == pinta_suit) { # different suit
+            pointsA <- pointsA + valueA + valueB
+            winA <- TRUE
           } else {
-            if (suitB == pinta_suit) { # different suit
-              pointsB <- pointsB + valueA + valueB
-              winA <- FALSE
-            } else if (suitA == pinta_suit) { # different suit
-              pointsA <- pointsA + valueA + valueB
-              winA <- TRUE
-            } else {
-              pointsB <- pointsB + valueA + valueB
-              winA <- FALSE
-            }
+            pointsB <- pointsB + valueA + valueB
+            winA <- FALSE
           }
-        }  
+        }
         # add cantes or tutes expected reward:
         # check for tute
         if (winA) { # only if A wins this hand can claim tute/cante
@@ -1185,60 +1161,176 @@ actionReward <- function(state, action) {
             }
           }
         }
-        reward_df$cardB[iter] <- playB
-        reward_df$reward[iter] <- pointsA - pointsB
-        iter <- iter + 1
-      } # end of playB loop
+        reward_df$cardB[1] <- playB
+        reward_df$reward[1] <- pointsA - pointsB
+        
+      } else { # player A plays first
+        iter <- 1
+        for (playB in unknown$card) {
+          pointsA <- pointsB <- 0
+          #playB <- unknown$card[1]
+          # compute expected reward when player A plays "action" and player B plays "playB"
+          suitB <- card_suit(playB)
+          numberB <- card_number(playB)
+          valueB <- card_value(playB)
+          known_cards_aux <- unique(c(known_cards,playB))
+          #
+          if (play_first == "A") { # player A takes 1st turn
+            if (suitA == suitB) { # same suit
+              if (order(numberA) < order(numberB)) {
+                pointsA <- pointsA + valueA + valueB
+                winA <- TRUE
+              } else {
+                pointsB <- pointsB + valueA + valueB
+                winA <- FALSE
+              }
+            } else {
+              if (suitA == pinta_suit) { # different suit
+                pointsA <- pointsA + valueA + valueB
+                winA <- TRUE
+              } else if (suitB == pinta_suit) { # different suit
+                pointsB <- pointsB + valueA + valueB
+                winA <- FALSE
+              } else {
+                pointsA <- pointsA + valueA + valueB
+                winA <- TRUE
+              }
+            }
+          } else { # player B plays first
+            if (suitA == suitB) { # same suit
+              if (order(numberB) < order(numberA)) {
+                pointsB <- pointsB + valueA + valueB
+                winA <- FALSE
+              } else {
+                pointsA <- pointsA + valueA + valueB
+                winA <- TRUE
+              }
+            } else {
+              if (suitB == pinta_suit) { # different suit
+                pointsB <- pointsB + valueA + valueB
+                winA <- FALSE
+              } else if (suitA == pinta_suit) { # different suit
+                pointsA <- pointsA + valueA + valueB
+                winA <- TRUE
+              } else {
+                pointsB <- pointsB + valueA + valueB
+                winA <- FALSE
+              }
+            }
+          }  
+          # add cantes or tutes expected reward:
+          # check for tute
+          if (winA) { # only if A wins this hand can claim tute/cante
+            if (sum(str_count(handA, "caballo"))==4 | sum(str_count(handA, "rey"))==4) {
+              pointsA <- 200
+            }
+            # else check for cantes
+            if (nrow(tuteA)>0) {
+              known_cards_aux <- c(known_cards_aux, paste0(tuteA$suit[1],"_caballo"),paste0(tuteA$suit[1],"_rey"))
+            }
+          } else { # only if B wins
+            ## For player B, I compute probabilities of cantes and tutes given playB and unknown cards
+            unknown_aux <- filter(unknown, !(card == playB))
+            # cantes
+            for (s in suits[which(!(suits %in% lost_cantes_suits))]) {
+              if ((paste0(s,"_caballo") %in% unknown_aux$card) & (paste0(s,"_rey") %in% unknown_aux$card)) { # potential cante
+                prob_cante <- dhyper(x = 2, m = 2, n = nrow(unknown_aux)-2, k = 5) # prob of player B holding this suit's cante in his hand
+                if (s == pinta_suit) pointsB <- pointsB + prob_cante*40 else pointsB <- pointsB + prob_cante*20
+              }
+            }
+            # tutes
+            for (figure in c("caballo","rey")) {
+              if (sum(str_count(unknown_aux$card,figure)) == 4) { # tute is available
+                prob_tute <- dhyper(x = 4, m = 4, n = nrow(unknown_aux)-4, k = 5) # conditional prob of player B having winning cards besides the cante cards (sample = 6-2 = 4)
+                pointsB <- pointsB + prob_tute*200
+              }
+            }
+          }
+          reward_df$cardB[iter] <- playB
+          reward_df$reward[iter] <- pointsA - pointsB
+          iter <- iter + 1
+          
+        } # end of playB loop
+      } # end of player A plays first
       
     } else { # Second stage. Follow through is required. No cantes allowed anymore
-      iter <- 1
-      for (playB in unknown$card) {
+      
+      if (!is.null(played_card) & (play_first == "B")) { # player A responds to card played by B
         pointsA <- pointsB <- 0
         # compute expected reward when player A plays "action" and player B plays "playB"
         suitB <- card_suit(playB)
         numberB <- card_number(playB)
         valueB <- card_value(playB)
         known_cards_aux <- unique(c(known_cards,playB))
-        #
-        if (play_first == "A") { # player A takes 1st turn
-          # Player B must follow suit or play pinta card
-          if (suitA == suitB) { # player B can follow suit
-            if (order(numberB) < order(numberA)) {
+        # Player A must follow suit or play pinta card
+        if (suitB==suitA) { # player A can follow suit
+          if (order(numberA) < order(numberB)) {
+            pointsA <- pointsA + valueA + valueB
+            winA <- TRUE
+          } else {
+            pointsB <- pointsB + valueA + valueB
+            winA <- FALSE
+          }
+        } else if (pinta_suit == suitA) { # playB is pinta
+          pointsA <- pointsA + valueA + valueB
+          winA <- TRUE
+        } else { # can't follow suit and don't have pinta card
+          pointsB <- pointsB + valueA + valueB
+          winA <- FALSE
+        }
+        reward_df$cardB[1] <- playB
+        reward_df$reward[1] <- pointsA - pointsB
+        
+      } else {
+        iter <- 1
+        for (playB in unknown$card) {
+          pointsA <- pointsB <- 0
+          # compute expected reward when player A plays "action" and player B plays "playB"
+          suitB <- card_suit(playB)
+          numberB <- card_number(playB)
+          valueB <- card_value(playB)
+          known_cards_aux <- unique(c(known_cards,playB))
+          #
+          if (play_first == "A") { # player A takes 1st turn
+            # Player B must follow suit or play pinta card
+            if (suitA == suitB) { # player B can follow suit
+              if (order(numberB) < order(numberA)) {
+                pointsB <- pointsB + valueA + valueB
+                winA <- FALSE # player B wins this hand
+              } else {
+                pointsA <- pointsA + valueA + valueB
+                winA <- TRUE
+              }
+            } else if (pinta_suit == suitB) { # playB is pinta
               pointsB <- pointsB + valueA + valueB
-              winA <- FALSE # player B wins this hand
-            } else {
+              winA <- FALSE
+            } else { # can't follow suit and don't have pinta card
               pointsA <- pointsA + valueA + valueB
               winA <- TRUE
             }
-          } else if (pinta_suit == suitB) { # playB is pinta
-            pointsB <- pointsB + valueA + valueB
-            winA <- FALSE
-          } else { # can't follow suit and don't have pinta card
-            pointsA <- pointsA + valueA + valueB
-            winA <- TRUE
-          }
-        } else { # player B won the last hand  
-          # Player A must follow suit or play pinta card
-          if (suitB==suitA) { # player A can follow suit
-            if (order(numberA) < order(numberB)) {
+          } else { # player B won the last hand  
+            # Player A must follow suit or play pinta card
+            if (suitB==suitA) { # player A can follow suit
+              if (order(numberA) < order(numberB)) {
+                pointsA <- pointsA + valueA + valueB
+                winA <- TRUE
+              } else {
+                pointsB <- pointsB + valueA + valueB
+                winA <- FALSE
+              }
+            } else if (pinta_suit == suitA) { # playB is pinta
               pointsA <- pointsA + valueA + valueB
               winA <- TRUE
-            } else {
+            } else { # can't follow suit and don't have pinta card
               pointsB <- pointsB + valueA + valueB
               winA <- FALSE
             }
-          } else if (pinta_suit == suitA) { # playB is pinta
-            pointsA <- pointsA + valueA + valueB
-            winA <- TRUE
-          } else { # can't follow suit and don't have pinta card
-            pointsB <- pointsB + valueA + valueB
-            winA <- FALSE
           }
-        }
-        reward_df$cardB[iter] <- playB
-        reward_df$reward[iter] <- pointsA - pointsB
-        iter <- iter + 1
-      } # end of playB loop
+          reward_df$cardB[iter] <- playB
+          reward_df$reward[iter] <- pointsA - pointsB
+          iter <- iter + 1
+        } # end of playB loop
+      } # end of player A plays first 
     }
     
     # compute Next State. Random on the player B pick? What about calling cantes, etc? Do I use a seed to replicate same outcome?
