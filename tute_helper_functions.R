@@ -600,10 +600,12 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
         #eval_handA <- smart_pick(handA, known_cards, pinta_suit, playFirst = TRUE) 
         #playA <- filter(eval_handA, penalty == max(penalty))$card[1]
         # actionReward
+        this_state <- cards2state(handA = handA, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = "A")
         max_reward <- -100
         playA <- handA[1]
         for (c in handA) {
-          thisReward <- actionReward(state = data_rele[act,]$State, action = c)$Reward
+          thisReward <- actionReward(state = this_state, action = c)$Reward
+          print(thisReward)
           if (thisReward > max_reward) {
             max_reward <- thisReward
             playA <- c
@@ -615,15 +617,18 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
       numberA <- str_split(playA,"_")[[1]][2]
       valueA <- filter(cards_df, card == playA)$value
       handA <- handA[-which(handA == playA)]
-      #
+      # player B responds. Need to take into account the card played by player A
       if (smartPlay) {
         #eval_handB <- smart_pick(handB, known_cards, pinta_suit, playFirst = FALSE, played_card = playA) 
         #playB <- filter(eval_handB, penalty == max(penalty))$card[1]
         # actionReward
+        # this_state from the point of view of player B
+        this_state <- cards2state(handA = handB, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = "B")
         max_reward <- -100
         playB <- handB[1]
         for (c in handB) {
-          thisReward <- actionReward(state = data_rele[act,]$State, action = c)$Reward
+          thisReward <- actionReward(state = this_state, action = c)$Reward
+          print(thisReward)
           if (thisReward > max_reward) {
             max_reward <- thisReward
             playB <- c
@@ -642,10 +647,12 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
         #eval_handB <- smart_pick(handB, known_cards, pinta_suit, playFirst = TRUE) 
         #playB <- filter(eval_handB, penalty == max(penalty))$card[1]
         # actionReward
+        this_state <- cards2state(handA = handB, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = "A")
         max_reward <- -100
         playB <- handB[1]
         for (c in handB) {
-          thisReward <- actionReward(state = data_rele[act,]$State, action = c)$Reward
+          thisReward <- actionReward(state = this_state, action = c)$Reward
+          print(thisReward)
           if (thisReward > max_reward) {
             max_reward <- thisReward
             playB <- c
@@ -662,10 +669,12 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
         #eval_handA <- smart_pick(handA, known_cards, pinta_suit, playFirst = FALSE, played_card = playB) 
         #playA <- filter(eval_handA, penalty == max(penalty))$card[1]
         # actionReward
+        this_state <- cards2state(handA = handA, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = "B")
         max_reward <- -100
         playA <- handA[1]
         for (c in handA) {
-          thisReward <- actionReward(state = data_rele[act,]$State, action = c)$Reward
+          thisReward <- actionReward(state = this_state, action = c)$Reward
+          print(thisReward)
           if (thisReward > max_reward) {
             max_reward <- thisReward
             playA <- c
@@ -795,10 +804,11 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
         #eval_handA <- smart_pick2(handA, known_cards, pinta_suit, playFirst = TRUE) 
         #playA <- filter(eval_handA, penalty == max(penalty))$card[1]
         # actionReward
+        this_state <- cards2state(handA = handA, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = "A")
         max_reward <- -100
         playA <- handA[1]
         for (c in handA) {
-          thisReward <- actionReward(state = data_rele[act,]$State, action = c)$Reward
+          thisReward <- actionReward(state = this_state, action = c)$Reward
           if (thisReward > max_reward) {
             max_reward <- thisReward
             playA <- c
@@ -829,10 +839,11 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
             #eval_handB <- smart_pick2(playablesB$card, known_cards, pinta_suit, playFirst = FALSE, played_card = playA) 
             #playB <- filter(eval_handB, penalty == max(penalty))$card[1]
             # actionReward
+            this_state <- cards2state(handA = handB, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = "B")
             max_reward <- -100
             playB <- handB[1]
             for (c in handB) {
-              thisReward <- actionReward(state = data_rele[act,]$State, action = c)$Reward
+              thisReward <- actionReward(state = this_state, action = c)$Reward
               if (thisReward > max_reward) {
                 max_reward <- thisReward
                 playB <- c
@@ -855,10 +866,11 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
           #eval_handB <- smart_pick2(playablesB$card, known_cards, pinta_suit, playFirst = FALSE, played_card = playA) 
           #playB <- filter(eval_handB, penalty == max(penalty))$card[1]
           # actionReward
+          this_state <- cards2state(handA = handB, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = "B")
           max_reward <- -100
           playB <- handB[1]
           for (c in handB) {
-            thisReward <- actionReward(state = data_rele[act,]$State, action = c)$Reward
+            thisReward <- actionReward(state = this_state, action = c)$Reward
             if (thisReward > max_reward) {
               max_reward <- thisReward
               playB <- c
@@ -875,10 +887,11 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
           #eval_handB <- smart_pick2(handB, known_cards, pinta_suit, playFirst = FALSE, played_card = playA) 
           #playB <- filter(eval_handB, penalty == max(penalty))$card[1]
           # actionReward
+          this_state <- cards2state(handA = handB, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = "B")
           max_reward <- -100
           playB <- handB[1]
           for (c in handB) {
-            thisReward <- actionReward(state = data_rele[act,]$State, action = c)$Reward
+            thisReward <- actionReward(state = this_state, action = c)$Reward
             if (thisReward > max_reward) {
               max_reward <- thisReward
               playB <- c
@@ -898,10 +911,11 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
         #eval_handB <- smart_pick2(handB, known_cards, pinta_suit, playFirst = TRUE) 
         #playB <- filter(eval_handB, penalty == max(penalty))$card[1]
         # actionReward
+        this_state <- cards2state(handA = handB, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = "A")
         max_reward <- -100
         playB <- handB[1]
         for (c in handB) {
-          thisReward <- actionReward(state = data_rele[act,]$State, action = c)$Reward
+          thisReward <- actionReward(state = this_state, action = c)$Reward
           if (thisReward > max_reward) {
             max_reward <- thisReward
             playB <- c
@@ -932,10 +946,11 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
             #eval_handA <- smart_pick2(playablesA$card, known_cards, pinta_suit, playFirst = FALSE, played_card = playB) 
             #playA <- filter(eval_handA, penalty == max(penalty))$card[1]
             # actionReward
+            this_state <- cards2state(handA = handA, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = "B")
             max_reward <- -100
             playA <- handA[1]
             for (c in handA) {
-              thisReward <- actionReward(state = data_rele[act,]$State, action = c)$Reward
+              thisReward <- actionReward(state = this_state, action = c)$Reward
               if (thisReward > max_reward) {
                 max_reward <- thisReward
                 playA <- c
@@ -958,10 +973,11 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
           #eval_handA <- smart_pick2(playablesA$card, known_cards, pinta_suit, playFirst = FALSE, played_card = playB) 
           #playA <- filter(eval_handA, penalty == max(penalty))$card[1]
           # actionReward
+          this_state <- cards2state(handA = handA, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = "B")
           max_reward <- -100
           playA <- handA[1]
           for (c in handA) {
-            thisReward <- actionReward(state = data_rele[act,]$State, action = c)$Reward
+            thisReward <- actionReward(state = this_state, action = c)$Reward
             if (thisReward > max_reward) {
               max_reward <- thisReward
               playA <- c
@@ -978,10 +994,11 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
           #eval_handA <- smart_pick2(handA, known_cards, pinta_suit, playFirst = FALSE, played_card = playB)
           #playA <- filter(eval_handA, penalty == max(penalty))$card[1]
           # actionReward
+          this_state <- cards2state(handA = handA, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = "B")
           max_reward <- -100
           playA <- handA[1]
           for (c in handA) {
-            thisReward <- actionReward(state = data_rele[act,]$State, action = c)$Reward
+            thisReward <- actionReward(state = this_state, action = c)$Reward
             if (thisReward > max_reward) {
               max_reward <- thisReward
               playA <- c
