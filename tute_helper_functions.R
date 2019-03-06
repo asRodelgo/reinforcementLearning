@@ -1109,6 +1109,7 @@ actionReward <- function(state, action, played_card = NULL) {
         pointsA <- pointsB <- 0
         #playB <- unknown$card[1]
         # compute expected reward when player A plays "action" and player B plays "playB"
+        playB <- played_card
         suitB <- card_suit(playB)
         numberB <- card_number(playB)
         valueB <- card_value(playB)
