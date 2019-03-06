@@ -428,7 +428,8 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
                           Reward = 0,
                           NewState = "",
                           Details = "",
-                          Hand = paste(handA, collapse = ","),
+                          HandA = paste(handA, collapse = ","),
+                          HandB = paste(handB, collapse = ","),
                           stringsAsFactors = FALSE)
   # Action counter
   act <- 1
@@ -464,7 +465,7 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
           cards_state_cantes <- mutate(cards_state, State = ifelse(card %in% handA, "A", "")) %>%
             mutate(State = ifelse(grepl(pinta_suit,card), paste0("P",State), State)) %>%
             mutate(State = ifelse(card %in% known_cards, paste0(State,"K"), State))
-          data_rele$NewState[act-1] <- paste(cards_state_cantes$State, collapse = ",")
+          data_rele$NewState[act-1] <- paste0(paste(cards_state_cantes$State, collapse = ","),",",act,",W",prev_hand_winner)
           tuteA$tute[1] <- 0
           tuteA <- filter(tuteA, tute > 0)
           # cards_state <- mutate(cards_state, State = ifelse(card %in% handA, "A", ifelse(card %in% known_cards, "K", ""))) %>%
@@ -496,7 +497,7 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
           cards_state_cantes <- mutate(cards_state, State = ifelse(card %in% handA, "A", "")) %>%
             mutate(State = ifelse(grepl(pinta_suit,card), paste0("P",State), State)) %>%
             mutate(State = ifelse(card %in% known_cards, paste0(State,"K"), State))
-          data_rele$NewState[act-1] <- paste(cards_state_cantes$State, collapse = ",")
+          data_rele$NewState[act-1] <- paste0(paste(cards_state_cantes$State, collapse = ","),",",act,",W",prev_hand_winner)
           tuteB$tute[1] <- 0
           tuteB <- filter(tuteB, tute > 0)
           # cards_state <- mutate(cards_state, State = ifelse(card %in% handA, "A", ifelse(card %in% known_cards, "K", ""))) %>%
@@ -510,66 +511,67 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
       }
     }
     #
-    # # rule 1: switch pinta when 2 or 7
-    if (pinta_number %in% c(2,4,5,6)) {
-      if (pinta2 %in% handA) {
-        handA <- handA[-which(handA == pinta2)]
-        handA <- c(handA,pinta)
-        pinta <- pinta2
-        known_cards <- c(known_cards,pinta)
-        # cards_state <- mutate(cards_state, State = ifelse(card %in% handA, "A", ifelse(card %in% known_cards, "K", ""))) %>%
-        #   mutate(State = ifelse(grepl(pinta_suit,card), paste0("P",State), State))
-        # data_rele$NewState[act] <- paste(cards_state$State, collapse = ",")
-        # data_rele$Action[act] <- "pinta_2"
-        # data_rele$Reward[act] <- 0
-        # act <- act + 1
-        # data_rele[act,]$State <- data_rele$NewState[act-1]
-        data_rele$Details[act] <- paste(data_rele$Details[act],"pintaA_2", collapse = ";")
-      }
-      if (pinta2 %in% handB) {
-        handB <- handB[-which(handB == pinta2)]
-        handB <- c(handB,pinta)
-        pinta <- pinta2
-        known_cards <- c(known_cards,pinta)
-        # cards_state <- mutate(cards_state, State = ifelse(card %in% handA, "A", ifelse(card %in% known_cards, "K", ""))) %>%
-        #   mutate(State = ifelse(grepl(pinta_suit,card), paste0("P",State), State))
-        # data_rele$NewState[act] <- paste(cards_state$State, collapse = ",")
-        # data_rele$Action[act] <- "pinta_2"
-        # data_rele$Reward[act] <- 0
-        # act <- act + 1
-        # data_rele[act,]$State <- data_rele$NewState[act-1]
-        data_rele$Details[act] <- paste(data_rele$Details[act],"pintaB_2", collapse = ";")
-      }
-    } else {
-      if (pinta7 %in% handA) {
-        handA <- handA[-which(handA == pinta7)]
-        handA <- c(handA,pinta)
-        pinta <- pinta7
-        known_cards <- c(known_cards,pinta)
-        # cards_state <- mutate(cards_state, State = ifelse(card %in% handA, "A", ifelse(card %in% known_cards, "K", ""))) %>%
-        #   mutate(State = ifelse(grepl(pinta_suit,card), paste0("P",State), State))
-        # data_rele$NewState[act] <- paste(cards_state$State, collapse = ",")
-        # data_rele$Action[act] <- "pinta_7"
-        # data_rele$Reward[act] <- 0
-        # act <- act + 1
-        # data_rele[act,]$State <- data_rele$NewState[act-1]
-        data_rele$Details[act] <- paste(data_rele$Details[act],"pintaA_7", collapse = ";")
-      }
-      if (pinta7 %in% handB) {
-        handB <- handB[-which(handB == pinta7)]
-        handB <- c(handB,pinta)
-        pinta <- pinta7
-        known_cards <- c(known_cards,pinta)
-        # cards_state <- mutate(cards_state, State = ifelse(card %in% handA, "A", ifelse(card %in% known_cards, "K", ""))) %>%
-        #   mutate(State = ifelse(grepl(pinta_suit,card), paste0("P",State), State))
-        # data_rele$NewState[act] <- paste(cards_state$State, collapse = ",")
-        # data_rele$Action[act] <- "pinta_7"
-        # data_rele$Reward[act] <- 0
-        # act <- act + 1
-        # data_rele[act,]$State <- data_rele$NewState[act-1]
-        data_rele$Details[act] <- paste(data_rele$Details[act],"pintaB_7", collapse = ";")
-      }
-    }
+    # # # rule 1: switch pinta when 2 or 7
+    # if (pinta_number %in% c(2,4,5,6)) {
+    #   if (pinta2 %in% handA) {
+    #     handA <- handA[-which(handA == pinta2)]
+    #     handA <- c(handA,pinta)
+    #     pinta <- pinta2
+    #     known_cards <- c(known_cards,pinta)
+    #     # cards_state <- mutate(cards_state, State = ifelse(card %in% handA, "A", ifelse(card %in% known_cards, "K", ""))) %>%
+    #     #   mutate(State = ifelse(grepl(pinta_suit,card), paste0("P",State), State))
+    #     # data_rele$NewState[act] <- paste(cards_state$State, collapse = ",")
+    #     # data_rele$Action[act] <- "pinta_2"
+    #     # data_rele$Reward[act] <- 0
+    #     # act <- act + 1
+    #     # data_rele[act,]$State <- data_rele$NewState[act-1]
+    #     data_rele$Details[act] <- paste(data_rele$Details[act],"pintaA_2", collapse = ";")
+    #   }
+    #   if (pinta2 %in% handB) {
+    #     handB <- handB[-which(handB == pinta2)]
+    #     handB <- c(handB,pinta)
+    #     pinta <- pinta2
+    #     known_cards <- c(known_cards,pinta)
+    #     # cards_state <- mutate(cards_state, State = ifelse(card %in% handA, "A", ifelse(card %in% known_cards, "K", ""))) %>%
+    #     #   mutate(State = ifelse(grepl(pinta_suit,card), paste0("P",State), State))
+    #     # data_rele$NewState[act] <- paste(cards_state$State, collapse = ",")
+    #     # data_rele$Action[act] <- "pinta_2"
+    #     # data_rele$Reward[act] <- 0
+    #     # act <- act + 1
+    #     # data_rele[act,]$State <- data_rele$NewState[act-1]
+    #     data_rele$Details[act] <- paste(data_rele$Details[act],"pintaB_2", collapse = ";")
+    #   }
+    # } else {
+    #   if (pinta7 %in% handA) {
+    #     handA <- handA[-which(handA == pinta7)]
+    #     handA <- c(handA,pinta)
+    #     pinta <- pinta7
+    #     known_cards <- c(known_cards,pinta)
+    #     # cards_state <- mutate(cards_state, State = ifelse(card %in% handA, "A", ifelse(card %in% known_cards, "K", ""))) %>%
+    #     #   mutate(State = ifelse(grepl(pinta_suit,card), paste0("P",State), State))
+    #     # data_rele$NewState[act] <- paste(cards_state$State, collapse = ",")
+    #     # data_rele$Action[act] <- "pinta_7"
+    #     # data_rele$Reward[act] <- 0
+    #     # act <- act + 1
+    #     # data_rele[act,]$State <- data_rele$NewState[act-1]
+    #     data_rele$Details[act] <- paste(data_rele$Details[act],"pintaA_7", collapse = ";")
+    #   }
+    #   if (pinta7 %in% handB) {
+    #     handB <- handB[-which(handB == pinta7)]
+    #     handB <- c(handB,pinta)
+    #     pinta <- pinta7
+    #     known_cards <- c(known_cards,pinta)
+    #     # cards_state <- mutate(cards_state, State = ifelse(card %in% handA, "A", ifelse(card %in% known_cards, "K", ""))) %>%
+    #     #   mutate(State = ifelse(grepl(pinta_suit,card), paste0("P",State), State))
+    #     # data_rele$NewState[act] <- paste(cards_state$State, collapse = ",")
+    #     # data_rele$Action[act] <- "pinta_7"
+    #     # data_rele$Reward[act] <- 0
+    #     # act <- act + 1
+    #     # data_rele[act,]$State <- data_rele$NewState[act-1]
+    #     data_rele$Details[act] <- paste(data_rele$Details[act],"pintaB_7", collapse = ";")
+    #   }
+    # }
+    #
     # rule 2: call tute or cante
     tuteA <- t(data.frame(str_split(handA, "_"))) %>%
       data.frame(stringsAsFactors = FALSE) %>%
@@ -603,9 +605,10 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
         this_state <- cards2state(handA = handA, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = "A")
         max_reward <- -100
         playA <- handA[1]
+        print("A plays first:")
         for (c in handA) {
           thisReward <- actionReward(state = this_state, action = c)$Reward
-          print(thisReward)
+          print(paste0(c," ",thisReward))
           if (thisReward > max_reward) {
             max_reward <- thisReward
             playA <- c
@@ -626,9 +629,10 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
         this_state <- cards2state(handA = handB, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = "B")
         max_reward <- -100
         playB <- handB[1]
+        print("B responds:")
         for (c in handB) {
           thisReward <- actionReward(state = this_state, action = c, played_card = playA)$Reward
-          print(thisReward)
+          print(paste0(c," ",thisReward))
           if (thisReward > max_reward) {
             max_reward <- thisReward
             playB <- c
@@ -650,9 +654,10 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
         this_state <- cards2state(handA = handB, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = "A")
         max_reward <- -100
         playB <- handB[1]
+        print("B plays first:")
         for (c in handB) {
           thisReward <- actionReward(state = this_state, action = c)$Reward
-          print(thisReward)
+          print(paste0(c," ",thisReward))
           if (thisReward > max_reward) {
             max_reward <- thisReward
             playB <- c
@@ -672,9 +677,10 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
         this_state <- cards2state(handA = handA, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = "B")
         max_reward <- -100
         playA <- handA[1]
+        print("A responds:")
         for (c in handA) {
           thisReward <- actionReward(state = this_state, action = c, played_card = playB)$Reward
-          print(thisReward)
+          print(paste0(c," ",thisReward))
           if (thisReward > max_reward) {
             max_reward <- thisReward
             playA <- c
@@ -772,13 +778,14 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
     cards_state <- mutate(cards_state, State = ifelse(card %in% handA, "A", "")) %>%
       mutate(State = ifelse(grepl(pinta_suit,card), paste0("P",State), State)) %>%
       mutate(State = ifelse(card %in% known_cards, paste0(State,"K"), State))
-    data_rele$NewState[act] <- paste(cards_state$State, collapse = ",")
+    data_rele$NewState[act] <- paste0(paste(cards_state$State, collapse = ","),",",act+1,",W",prev_hand_winner)
     data_rele$Action[act] <- playA
     data_rele$Reward[act] <- pointsA - pointsB
     act <- act + 1
-    data_rele[act,]$State <- paste0(data_rele$NewState[act-1],",",act,",W",prev_hand_winner)
+    data_rele[act,]$State <- data_rele$NewState[act-1]
     data_rele$Details[act] <- paste("",paste0("drawA_",drawA),paste0("drawB_",drawB), collapse = ";")
-    data_rele$Hand[act] <- paste(handA, collapse = ",")
+    data_rele$HandA[act] <- paste(handA, collapse = ",")
+    data_rele$HandB[act] <- paste(handB, collapse = ",")
     #
     #continue <- readline(prompt = "Continue? y/n")
     #if (continue == "y") keep_on <- TRUE else keep_on <- FALSE
@@ -794,6 +801,7 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
   ############################################
   #
   # Final stage of the game
+  print("---------- Final stage ------------")
   winA2 <- winA # A win boolean for final stage of the game
   while (length(handA) > 0) {
     pointsA <- 0
@@ -807,8 +815,10 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
         this_state <- cards2state(handA = handA, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = "A")
         max_reward <- -100
         playA <- handA[1]
+        print("A plays first")
         for (c in handA) {
           thisReward <- actionReward(state = this_state, action = c)$Reward
+          print(paste0(c," ",thisReward))
           if (thisReward > max_reward) {
             max_reward <- thisReward
             playA <- c
@@ -842,8 +852,10 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
             this_state <- cards2state(handA = handB, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = "B")
             max_reward <- -100
             playB <- handB[1]
+            print("B responds:")
             for (c in handB) {
               thisReward <- actionReward(state = this_state, action = c)$Reward
+              print(paste0(c," ",thisReward))
               if (thisReward > max_reward) {
                 max_reward <- thisReward
                 playB <- c
@@ -869,8 +881,10 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
           this_state <- cards2state(handA = handB, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = "B")
           max_reward <- -100
           playB <- handB[1]
+          print("B responds:")
           for (c in handB) {
             thisReward <- actionReward(state = this_state, action = c)$Reward
+            print(paste0(c," ",thisReward))
             if (thisReward > max_reward) {
               max_reward <- thisReward
               playB <- c
@@ -890,8 +904,10 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
           this_state <- cards2state(handA = handB, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = "B")
           max_reward <- -100
           playB <- handB[1]
+          print("B responds:")
           for (c in handB) {
             thisReward <- actionReward(state = this_state, action = c)$Reward
+            print(paste0(c," ",thisReward))
             if (thisReward > max_reward) {
               max_reward <- thisReward
               playB <- c
@@ -914,8 +930,10 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
         this_state <- cards2state(handA = handB, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = "A")
         max_reward <- -100
         playB <- handB[1]
+        print("B plays first:")
         for (c in handB) {
           thisReward <- actionReward(state = this_state, action = c)$Reward
+          print(paste0(c," ",thisReward))
           if (thisReward > max_reward) {
             max_reward <- thisReward
             playB <- c
@@ -949,8 +967,10 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
             this_state <- cards2state(handA = handA, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = "B")
             max_reward <- -100
             playA <- handA[1]
+            print("A responds:")
             for (c in handA) {
               thisReward <- actionReward(state = this_state, action = c, played_card = playB)$Reward
+              print(paste0(c," ",thisReward))
               if (thisReward > max_reward) {
                 max_reward <- thisReward
                 playA <- c
@@ -976,8 +996,10 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
           this_state <- cards2state(handA = handA, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = "B")
           max_reward <- -100
           playA <- handA[1]
+          print("A responds:")
           for (c in handA) {
             thisReward <- actionReward(state = this_state, action = c, played_card = playB)$Reward
+            print(paste0(c," ",thisReward))
             if (thisReward > max_reward) {
               max_reward <- thisReward
               playA <- c
@@ -997,8 +1019,10 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
           this_state <- cards2state(handA = handA, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = "B")
           max_reward <- -100
           playA <- handA[1]
+          print("A responds:")
           for (c in handA) {
             thisReward <- actionReward(state = this_state, action = c, played_card = playB)$Reward
+            print(paste0(c," ",thisReward))
             if (thisReward > max_reward) {
               max_reward <- thisReward
               playA <- c
@@ -1013,15 +1037,16 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
     }
     cards_state <- mutate(cards_state, State = ifelse(card %in% handA, "A", ifelse(card %in% known_cards, "K", ""))) %>%
       mutate(State = ifelse(grepl(pinta_suit,card), paste0("P",State), State))
-    data_rele$NewState[act] <- paste(cards_state$State, collapse = ",")
+    data_rele$NewState[act] <- paste0(paste(cards_state$State, collapse = ","),",",act+1,",W",prev_hand_winner)
     data_rele$Action[act] <- playA
     data_rele$Reward[act] <- pointsA - pointsB
     data_rele$Details[act] <- paste(data_rele$Details[act], paste0("playA_",playA), paste0("playB_",playB), collapse = ";")
     if (act < 20) {
       act <- act + 1
-      data_rele[act,]$State <- paste0(data_rele$NewState[act-1],",",act,",W",prev_hand_winner)
+      data_rele[act,]$State <- data_rele$NewState[act-1]
       data_rele$Details[act] <- ""
-      data_rele$Hand[act] <- paste(handA, collapse = ",")
+      data_rele$HandA[act] <- paste(handA, collapse = ",")
+      data_rele$HandB[act] <- paste(handB, collapse = ",")
     }
     if (verbose) {
       print(paste0("playA: ",playA," playB: ",playB))
