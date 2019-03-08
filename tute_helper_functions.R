@@ -812,7 +812,9 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
         #eval_handA <- smart_pick2(handA, known_cards, pinta_suit, playFirst = TRUE) 
         #playA <- filter(eval_handA, penalty == max(penalty))$card[1]
         # actionReward
-        this_state <- cards2state(handA = handA, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = "A")
+        play_first_aux <- "A" # in reality play_first is B but here B acts as A
+        known_cards_aux <- unique(known_cards[-which(handB %in% known_cards)]) # There are no more cards in the deck so all cards are known to this player
+        this_state <- cards2state(handA = handA, pinta_suit = pinta_suit, known_cards = known_cards_aux, turn = act, play_first = play_first_aux)
         max_reward <- -100
         playA <- handA[1]
         print("A plays first")
@@ -849,7 +851,9 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
             #eval_handB <- smart_pick2(playablesB$card, known_cards, pinta_suit, playFirst = FALSE, played_card = playA) 
             #playB <- filter(eval_handB, penalty == max(penalty))$card[1]
             # actionReward
-            this_state <- cards2state(handA = handB, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = "B")
+            play_first_aux <- "B" # in reality play_first is B but here B acts as A
+            known_cards_aux <- unique(known_cards[-which(handA %in% known_cards)]) # There are no more cards in the deck so all cards are known to this player
+            this_state <- cards2state(handA = handB, pinta_suit = pinta_suit, known_cards = known_cards_aux, turn = act, play_first = play_first_aux)
             max_reward <- -100
             playB <- handB[1]
             print("B responds:")
@@ -878,7 +882,9 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
           #eval_handB <- smart_pick2(playablesB$card, known_cards, pinta_suit, playFirst = FALSE, played_card = playA) 
           #playB <- filter(eval_handB, penalty == max(penalty))$card[1]
           # actionReward
-          this_state <- cards2state(handA = handB, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = "B")
+          play_first_aux <- "B" # in reality play_first is B but here B acts as A
+          known_cards_aux <- unique(known_cards[-which(handA %in% known_cards)]) # There are no more cards in the deck so all cards are known to this player
+          this_state <- cards2state(handA = handB, pinta_suit = pinta_suit, known_cards = known_cards_aux, turn = act, play_first = play_first_aux)
           max_reward <- -100
           playB <- handB[1]
           print("B responds:")
@@ -901,7 +907,9 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
           #eval_handB <- smart_pick2(handB, known_cards, pinta_suit, playFirst = FALSE, played_card = playA) 
           #playB <- filter(eval_handB, penalty == max(penalty))$card[1]
           # actionReward
-          this_state <- cards2state(handA = handB, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = "B")
+          play_first_aux <- "B" # in reality play_first is B but here B acts as A
+          known_cards_aux <- unique(known_cards[-which(handA %in% known_cards)]) # There are no more cards in the deck so all cards are known to this player
+          this_state <- cards2state(handA = handB, pinta_suit = pinta_suit, known_cards = known_cards_aux, turn = act, play_first = play_first_aux)
           max_reward <- -100
           playB <- handB[1]
           print("B responds:")
@@ -927,7 +935,10 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
         #eval_handB <- smart_pick2(handB, known_cards, pinta_suit, playFirst = TRUE) 
         #playB <- filter(eval_handB, penalty == max(penalty))$card[1]
         # actionReward
-        this_state <- cards2state(handA = handB, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = "A")
+        play_first_aux <- "A" # in reality play_first is B but here B acts as A
+        known_cards_aux <- unique(known_cards[-which(handA %in% known_cards)]) # There are no more cards in the deck so all cards are known to this player
+        # got to make sure handA coincides with unknown cards (cantes may have happened during phase 1)
+        this_state <- cards2state(handA = handB, pinta_suit = pinta_suit, known_cards = known_cards_aux, turn = act, play_first = play_first_aux)
         max_reward <- -100
         playB <- handB[1]
         print("B plays first:")
@@ -964,7 +975,9 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
             #eval_handA <- smart_pick2(playablesA$card, known_cards, pinta_suit, playFirst = FALSE, played_card = playB) 
             #playA <- filter(eval_handA, penalty == max(penalty))$card[1]
             # actionReward
-            this_state <- cards2state(handA = handA, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = "B")
+            play_first_aux <- "B" # in reality play_first is B but here B acts as A
+            known_cards_aux <- unique(known_cards[-which(handB %in% known_cards)]) # There are no more cards in the deck so all cards are known to this player
+            this_state <- cards2state(handA = handA, pinta_suit = pinta_suit, known_cards = known_cards_aux, turn = act, play_first = play_first_aux)
             max_reward <- -100
             playA <- handA[1]
             print("A responds:")
@@ -993,7 +1006,9 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
           #eval_handA <- smart_pick2(playablesA$card, known_cards, pinta_suit, playFirst = FALSE, played_card = playB) 
           #playA <- filter(eval_handA, penalty == max(penalty))$card[1]
           # actionReward
-          this_state <- cards2state(handA = handA, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = "B")
+          play_first_aux <- "B" # in reality play_first is B but here B acts as A
+          known_cards_aux <- unique(known_cards[-which(handB %in% known_cards)]) # There are no more cards in the deck so all cards are known to this player
+          this_state <- cards2state(handA = handA, pinta_suit = pinta_suit, known_cards = known_cards_aux, turn = act, play_first = play_first_aux)
           max_reward <- -100
           playA <- handA[1]
           print("A responds:")
@@ -1016,7 +1031,9 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
           #eval_handA <- smart_pick2(handA, known_cards, pinta_suit, playFirst = FALSE, played_card = playB)
           #playA <- filter(eval_handA, penalty == max(penalty))$card[1]
           # actionReward
-          this_state <- cards2state(handA = handA, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = "B")
+          play_first_aux <- "B" # in reality play_first is B but here B acts as A
+          known_cards_aux <- unique(known_cards[-which(handB %in% known_cards)]) # There are no more cards in the deck so all cards are known to this player
+          this_state <- cards2state(handA = handA, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = play_first_aux)
           max_reward <- -100
           playA <- handA[1]
           print("A responds:")
@@ -1278,7 +1295,11 @@ actionReward <- function(state, action, played_card = NULL) {
           
         } # end of playB loop
       } # end of player A plays first
-      
+      drawA <- sample(unknown$card,1)
+      handA <- c(handA,drawA)
+      unknown <- filter(unknown,  !(card == drawA))
+      drawB <- sample(unknown$card,1)
+      known_cards <- c(known_cards, action, playB, drawA)
     } else { # Second stage. Follow through is required. No cantes allowed anymore
       
       if (!is.null(played_card) & (play_first == "B")) { # player A responds to card played by B
@@ -1307,7 +1328,7 @@ actionReward <- function(state, action, played_card = NULL) {
         reward_df$cardB[1] <- playB
         reward_df$reward[1] <- pointsA - pointsB
         
-      } else {
+      } else { # player A plays first
         iter <- 1
         for (playB in unknown$card) {
           pointsA <- pointsB <- 0
@@ -1357,7 +1378,8 @@ actionReward <- function(state, action, played_card = NULL) {
           iter <- iter + 1
         } # end of playB loop
       } # end of player A plays first 
-    }
+      known_cards <- c(known_cards, action, playB)
+    } # end of stage 2
     
     # compute Next State. Random on the player B pick? What about calling cantes, etc? Do I use a seed to replicate same outcome?
     # For every action, i.e., card played by player A, there are as many possible outcomes as unknown cards, each with different probabilites and rewards
@@ -1372,11 +1394,6 @@ actionReward <- function(state, action, played_card = NULL) {
     #
     playB <- filter(reward_df, reward == min(reward_df$reward))$cardB[1]
     unknown <- filter(unknown,  !(card == playB))
-    drawA <- sample(unknown$card,1)
-    handA <- c(handA,drawA)
-    unknown <- filter(unknown,  !(card == drawA))
-    drawB <- sample(unknown$card,1)
-    known_cards <- c(known_cards, action, playB, drawA)
     turn <- turn + 1
     if (winA) play_first <- "A" else play_first <- "B"
     #
