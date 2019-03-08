@@ -817,7 +817,7 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
         this_state <- cards2state(handA = handA, pinta_suit = pinta_suit, known_cards = known_cards_aux, turn = act, play_first = play_first_aux)
         max_reward <- -100
         playA <- handA[1]
-        print("A plays first")
+        print("A plays first:")
         for (c in handA) {
           thisReward <- actionReward(state = this_state, action = c)$Reward
           print(paste0(c," ",thisReward))
@@ -845,6 +845,8 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
           valueB <- filter(cards_df, card == playB)$value
           pointsB <- pointsB + valueA + valueB
           winA2 <- FALSE # player B wins this hand
+          print("B responds:")
+          print(paste0(playB, " ",pointsB))
         } else {
           #
           if (smartPlay) {
@@ -888,7 +890,7 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
           max_reward <- -100
           playB <- handB[1]
           print("B responds:")
-          for (c in handB) {
+          for (c in playablesB$card) {
             thisReward <- actionReward(state = this_state, action = c)$Reward
             print(paste0(c," ",thisReward))
             if (thisReward > max_reward) {
@@ -969,6 +971,8 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
           valueA <- filter(cards_df, card == playA)$value
           pointsA <- pointsA + valueA + valueB
           winA2 <- TRUE
+          print("A responds:")
+          print(paste0(playA, " ",pointsA))
         } else {
           #
           if (smartPlay) {
@@ -1012,7 +1016,7 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
           max_reward <- -100
           playA <- handA[1]
           print("A responds:")
-          for (c in handA) {
+          for (c in playablesA$card) {
             thisReward <- actionReward(state = this_state, action = c, played_card = playB)$Reward
             print(paste0(c," ",thisReward))
             if (thisReward > max_reward) {
@@ -1052,6 +1056,7 @@ play_tute <- function(smartPlay = FALSE, verbose = FALSE){
       }
       handA <- handA[-which(handA == playA)]
     }
+    if (winA2) prev_hand_winner <- "A" else prev_hand_winner <- "B"
     cards_state <- mutate(cards_state, State = ifelse(card %in% handA, "A", ifelse(card %in% known_cards, "K", ""))) %>%
       mutate(State = ifelse(grepl(pinta_suit,card), paste0("P",State), State))
     data_rele$NewState[act] <- paste0(paste(cards_state$State, collapse = ","),",",act+1,",W",prev_hand_winner)
@@ -1300,11 +1305,12 @@ actionReward <- function(state, action, played_card = NULL) {
       unknown <- filter(unknown,  !(card == drawA))
       drawB <- sample(unknown$card,1)
       known_cards <- c(known_cards, action, playB, drawA)
+    #  
     } else { # Second stage. Follow through is required. No cantes allowed anymore
-      
       if (!is.null(played_card) & (play_first == "B")) { # player A responds to card played by B
         pointsA <- pointsB <- 0
         # compute expected reward when player A plays "action" and player B plays "playB"
+        playB <- played_card
         suitB <- card_suit(playB)
         numberB <- card_number(playB)
         valueB <- card_value(playB)
