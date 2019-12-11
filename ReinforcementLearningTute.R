@@ -18,11 +18,11 @@
 #
 # The computer will update the values in the following way:
 # Play the complete game, if player A wins, it will assign Reward = 1, if loses, = -1, 0 if a tie. 
-# This Reward is the value for the final state of the game. We can assign Vstate16' = Reward and 
+# This Reward is the value for the final state of the game. We can assign Vstate20' = Reward and 
 # back-propagate the rest of the updated values:
 #
-# Vstate15' = Vstate15 + lr*(gamma*Vstate16' - Vstate15)
-# Vstate14' = Vstate14 + lr*(gamma*Vstate15' - Vstate14)
+# Vstate19' = Vstate19 + lr*(gamma*Vstate20' - Vstate19)
+# Vstate18' = Vstate18 + lr*(gamma*Vstate19' - Vstate18)
 # and so on ...
 #
 # Where 0 < lr < 1 is the learning rate: How fast the values get updated with new information. 
@@ -35,7 +35,11 @@
 #
 # For reference: tictactoe's player1_hashes (vector of <=9 states after each move) is equivalent to 
 # states (vector of 20 states after each move in tute)
-
+#
+# Steps: 
+# Play game (play_tute) and return outcome of it: 1 (A wins), -1 (B wins) or 0 (tie) and vector of states [1:20]
+# Update values for each of the states in the sequence
+# Add states and respective values to the dictionary of states-values
 
 
 
