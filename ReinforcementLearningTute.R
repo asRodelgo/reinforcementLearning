@@ -28,11 +28,13 @@
 # Where 0 < lr < 1 is the learning rate: How fast the values get updated with new information. 
 # If lr = 1, it will change V every single time the computer sees a new case, if closer to 0, 
 # it will need a high number of samples to reach to the optimal value for that state.
-# And 0 < gamma < 1 reduces the reward as you go back in time, that is, early hands will most likely have 
-# no effect in the final result. 
+# And 0 < gamma < 1 reduces the reward as you go back in time, that is, gamma values close to 0, 
+# will make early hands will most likely have no effect in the final result (reward). 
 #
 # Start with e = 0.7, lr = 0.4, gamma = 0.95
 #
+# For reference: tictactoe's player1_hashes (vector of <=9 states after each move) is equivalent to 
+# states (vector of 20 states after each move in tute)
 
 
 
