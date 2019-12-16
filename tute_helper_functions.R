@@ -1447,7 +1447,8 @@ play_tute2 <- function() {
 }
 
 # Play a game of Tute and return final score for Player A and Player B (Player A always starts)
-play_tute <- function(epsilon = 0.5, verbose = FALSE){
+# output = 'reward' (>0 if player A wins, <0 if B wins, = 0 if tied) or 'plays' (detail of each of 20 plays)
+play_tute <- function(epsilon = 0.5, output = 'plays', verbose = FALSE){
   
   # initial deck of cards
   deck <- cards_df$card

@@ -20,9 +20,10 @@ cppFunction('NumericVector backfeed_rewardCpp(NumericVector values, double rewar
 backfeed_Reward <- function(values, reward, learning_rate, gamma) {
   
   new_values <- numeric()
-  for (s in 19:0) {
+  for (s in 21:1) {
     new_value <- values[s] + learning_rate*((gamma*reward)-values[s])
     new_values <- c(new_values, new_value)
+    reward <- new_value
   }
   return(new_values)
 }

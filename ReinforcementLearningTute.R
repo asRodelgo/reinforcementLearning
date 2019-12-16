@@ -41,8 +41,19 @@
 # Update values for each of the states in the sequence
 # Add states and respective values to the dictionary of states-values
 
+library(tidyverse)
+source("tute_helper_functions.R") # load helper_functions
+cards_df <- define_cards() # Define cards, values and their order
+cards_order <- data.frame(card = c(1,3,"rey","caballo","sota",7,6,5,4,2), order = seq(1,10,1), stringsAsFactors = FALSE)
 
-
+this_game <- play_tute(epsilon = 0.5)
+outcome <- sum(this_game$Reward)
+states <- append(this_game$State,this_game$NewState[20])
+# update values
+values0 <- rep(0, 21)
+values_new <- sort(backfeed_Reward(values = values0, reward = outcome, learning_rate = 0.4, gamma = 0.9))
+# update dictionary
+dictionary <- data.frame(state = states, value = values_new)
 
 
 
