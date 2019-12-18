@@ -46,11 +46,22 @@ source("tute_helper_functions.R") # load helper_functions
 cards_df <- define_cards() # Define cards, values and their order
 cards_order <- data.frame(card = c(1,3,"rey","caballo","sota",7,6,5,4,2), order = seq(1,10,1), stringsAsFactors = FALSE)
 
+# initialize dictionary
+dictionary <- data.frame(state = , value = NA)
+# play a game
 this_game <- play_tute(epsilon = 0.5)
 outcome <- sum(this_game$Reward)
-states <- append(this_game$State,this_game$NewState[20])
+states <- this_game$State
 # update values
-values0 <- rep(0, 21)
+# 0. Generate all possible states?
+# 1. take the 20 states from the played game and retrieve their current values from the dictionary
+values0 <- filter(dictionary, state %in% states)$value
+this_dictionary <- data.frame(state = states) %>%
+  left_join(dictionary, by = "state")
+# 2. apply backfeed_Reward to update the values of those 20 states
+# 3. update the dictionary values of those 20 states
+
+values0 <- rep(0, 20)
 values_new <- sort(backfeed_Reward(values = values0, reward = outcome, learning_rate = 0.4, gamma = 0.9))
 # update dictionary
 dictionary <- data.frame(state = states, value = values_new)
