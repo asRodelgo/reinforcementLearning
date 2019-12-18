@@ -46,32 +46,40 @@ source("tute_helper_functions.R") # load helper_functions
 cards_df <- define_cards() # Define cards, values and their order
 cards_order <- data.frame(card = c(1,3,"rey","caballo","sota",7,6,5,4,2), order = seq(1,10,1), stringsAsFactors = FALSE)
 
-# initialize dictionary
-dictionary <- data.frame(state = , value = NA)
-# play a game
+### play first game to initialize dictionary and values
+
+# play game
 this_game <- play_tute(epsilon = 0.5)
-outcome <- sum(this_game$Reward)
-states <- this_game$State
+Reward <- sum(this_game$Reward)
+Sfrom <- this_game$State
+Sto <- this_game$NewState
+
 # update values
-# 0. Generate all possible states?
-# 1. take the 20 states from the played game and retrieve their current values from the dictionary
-values0 <- filter(dictionary, state %in% states)$value
-this_dictionary <- data.frame(state = states) %>%
-  left_join(dictionary, by = "state")
-# 2. apply backfeed_Reward to update the values of those 20 states
-# 3. update the dictionary values of those 20 states
+values0 <- rep(0, 20) # initial values
+values_new <- sort(abs(backfeed_Reward(values = values0, reward = Reward, learning_rate = 0.4, gamma = 0.9)))*sign(Reward)
 
-values0 <- rep(0, 20)
-values_new <- sort(backfeed_Reward(values = values0, reward = outcome, learning_rate = 0.4, gamma = 0.9))
+# update dictionary (create it for the first time on this instance)
+dictionary <- data.frame(Sfrom = Sfrom, Sto = Sto, Value = values_new, stringsAsFactors = FALSE)
+
+## play second game
+this_game <- play_tute(epsilon = 0.5)
+Reward <- sum(this_game$Reward)
+Sfrom <- this_game$State
+Sto <- this_game$NewState
+
+# update values
+this_game_values <- this_game %>% # initial values
+  left_join(dictionary, by = c("State"="Sfrom","NewState"="Sto")) %>%
+  mutate(Value = replace_na(Value,0))
+values0 <- this_game_values$Value
+values_new <- sort(abs(backfeed_Reward(values = values0, reward = Reward, learning_rate = 0.4, gamma = 0.9)))*sign(Reward)
+
+this_game <- mutate(this_game, Value = values_new)
+
 # update dictionary
-dictionary <- data.frame(state = states, value = values_new)
+dictionary2 <- full_join(dictionary, select(this_game, State, NewState, Value), by = c("Sfrom"="State","Sto"="NewState")) %>%
+  mutate(Value = ifelse(!is.na(Value.y), Value.y, Value.x)) %>%
+  select(-contains("."))
 
-
-
-
-
-
-
-
-
+# iterate from here recursively
 
