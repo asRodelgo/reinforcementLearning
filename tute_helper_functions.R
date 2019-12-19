@@ -2156,6 +2156,16 @@ play_tute <- function(epsilon = 0.5, output = 'plays', verbose = FALSE){
   
   #return(c(pointsA,pointsB))
   return(data_rele)
-  
 }
 
+### Version in R until I figure out how to properly install C++ libraries
+backfeed_Reward <- function(values, reward, learning_rate, gamma) {
+  
+  new_values <- numeric()
+  for (s in length(values):1) {
+    new_value <- values[s] + learning_rate*((gamma*reward)-values[s])
+    new_values <- c(new_values, new_value)
+    reward <- new_value
+  }
+  return(new_values)
+}

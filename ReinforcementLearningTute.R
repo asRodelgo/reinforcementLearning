@@ -77,9 +77,35 @@ values_new <- sort(abs(backfeed_Reward(values = values0, reward = Reward, learni
 this_game <- mutate(this_game, Value = values_new)
 
 # update dictionary
-dictionary2 <- full_join(dictionary, select(this_game, State, NewState, Value), by = c("Sfrom"="State","Sto"="NewState")) %>%
+dictionary <- full_join(dictionary, select(this_game, State, NewState, Value), by = c("Sfrom"="State","Sto"="NewState")) %>%
   mutate(Value = ifelse(!is.na(Value.y), Value.y, Value.x)) %>%
   select(-contains("."))
 
-# iterate from here recursively
+# iterate from here recursively but first modify play_tute to incorporate the decision based on updated values
+iter_max <- 100
+i <- 1
+while (i <= iter_max) {
+  this_game <- play_tute(epsilon = 0.5)
+  Reward <- sum(this_game$Reward)
+  Sfrom <- this_game$State
+  Sto <- this_game$NewState
+  
+  # update values
+  this_game_values <- this_game %>% # initial values
+    left_join(dictionary, by = c("State"="Sfrom","NewState"="Sto")) %>%
+    mutate(Value = replace_na(Value,0))
+  values0 <- this_game_values$Value
+  values_new <- sort(abs(backfeed_Reward(values = values0, reward = Reward, learning_rate = 0.4, gamma = 0.9)))*sign(Reward)
+  
+  this_game <- mutate(this_game, Value = values_new)
+  
+  # update dictionary
+  dictionary <- full_join(dictionary, select(this_game, State, NewState, Value), by = c("Sfrom"="State","Sto"="NewState")) %>%
+    mutate(Value = ifelse(!is.na(Value.y), Value.y, Value.x)) %>%
+    select(-contains("."))
+}
+
+
+
+
 

@@ -16,17 +16,6 @@ cppFunction('NumericVector backfeed_rewardCpp(NumericVector values, double rewar
   return new_values;
 }')
 
-### Version in R until I figure out how to properly install C++ libraries
-backfeed_Reward <- function(values, reward, learning_rate, gamma) {
-  
-  new_values <- numeric()
-  for (s in length(values):1) {
-    new_value <- values[s] + learning_rate*((gamma*reward)-values[s])
-    new_values <- c(new_values, new_value)
-    reward <- new_value
-  }
-  return(new_values)
-}
 #function to choose and implement computer moves
 computer_move <- function(piece, board, epsilon) {
   #get potential moves
