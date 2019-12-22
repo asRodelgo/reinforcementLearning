@@ -2169,3 +2169,26 @@ backfeed_Reward <- function(values, reward, learning_rate, gamma) {
   }
   return(new_values)
 }
+
+# Each state has 4! identical states by permutations of the 4 different suits
+compute_invariants <- function(state) {
+  
+  
+  return(invariants)
+}
+
+# compute player B states
+state_playerB <- function(stateA, handB) {
+  
+  # stateA <- this_game$State[1]
+  # handB <- this_game$handB[1]
+  cardsA <- state2cards(stateA)
+  cardsB <- cardsA 
+  cardsB$handA <- handB
+  stateB <- cards2state(handA = handB, pinta_suit = , known_cards, turn, play_first = "A")
+  
+  return(stateB)
+}
+
+
+
