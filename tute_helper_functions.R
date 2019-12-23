@@ -2173,22 +2173,43 @@ backfeed_Reward <- function(values, reward, learning_rate, gamma) {
 # Each state has 4! identical states by permutations of the 4 different suits
 compute_invariants <- function(state) {
   
+  state <- this_game$State[1]
+  state_raw <- str_split(state,",")[[1]]
+  inv <- list()
+  inv[[1]] <- state_raw[1:10]
+  inv[[2]] <- state_raw[11:20]
+  inv[[3]] <- state_raw[21:30]
+  inv[[4]] <- state_raw[31:40]
+  turn_start <- state_raw[41:42]
   
-  return(invariants)
+  invStates <- list()
+  
+  count <- 1
+  for (i in 1:4) {
+    for (j in c(1:4)[-i]) {
+      for (k in c(1:4)[-c(i,j)]) {
+        l <- c(1:4)[-c(i,j,k)]
+        print(c(i,j,k,l))
+        this_inv <- c(inv[[i]],inv[[j]],inv[[k]],inv[[l]])
+        this_inv <- paste(this_inv, collapse = ",")
+        invStates[[count]] <- this_inv
+        count <- count + 1
+      }
+    }
+  }
+    
+  return(invStates)
 }
 
 # compute player B states
 state_playerB <- function(stateA, handB) {
   
   # stateA <- this_game$State[1]
-  # handB <- this_game$handB[1]
+  # handB <- c(str_split(this_game$HandB[1],",")[[1]])
   cardsA <- state2cards(stateA)
-  cardsB <- cardsA 
-  cardsB$handA <- handB
-  stateB <- cards2state(handA = handB, pinta_suit = , known_cards, turn, play_first = "A")
+  stateB <- cards2state(handA = handB, pinta_suit = cardsA$pinta[1], known_cards = cardsA$known_cards, turn = cardsA$turn[1], play_first = substr(cardsA$play_first[1],2,2))
   
   return(stateB)
 }
-
 
 
