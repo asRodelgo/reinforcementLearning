@@ -1692,7 +1692,7 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
           this_new_state <- cards2state(handA = handB[-which(handB == c)], pinta_suit = pinta_suit, known_cards = c(known_cards,c), turn = act, play_first = "B")
           thisValue <- filter(dictionary, Sfrom == this_state, Sto == this_new_state)$Value
           if (length(thisValue)==0) thisValue <- 0 # in case this state is not yet registered in the dictionary 
-          print(paste0(c," ",thisReward))
+          print(paste0(c," ",thisValue))
           if (thisValue > max_value) {
             max_value <- thisValue
             playB <- c
@@ -1878,8 +1878,6 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
     if (winA2) { # if player A won the last hand
       #
       if (p1_epsilon > runif(1)) {
-        #eval_handA <- smart_pick2(handA, known_cards, pinta_suit, playFirst = TRUE) 
-        #playA <- filter(eval_handA, penalty == max(penalty))$card[1]
         # actionReward
         play_first_aux <- "A" # in reality play_first is B but here B acts as A
         known_cards_aux <- unique(known_cards[-which(handB %in% known_cards)]) # There are no more cards in the deck so all cards are known to this player
@@ -1898,6 +1896,7 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
           }
         }
       } else {
+        play_first_aux <- "A" 
         playA <- sample(handA,1)
         this_new_state <- cards2state(handA = handA[-which(handA == playA)], pinta_suit = pinta_suit, known_cards = c(known_cards,playA), turn = act, play_first = play_first_aux)
       }
@@ -1940,6 +1939,7 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
               }
             }
           } else {
+            play_first_aux <- "B" 
             playB <- sample(playablesB$card,1)
             this_new_state <- cards2state(handA = handB[-which(handB == playB)], pinta_suit = pinta_suit, known_cards = c(known_cards_aux,playB), turn = act, play_first = play_first_aux)
           }
@@ -1974,6 +1974,7 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
             }
           }
         } else {
+          play_first_aux <- "B" 
           playB <- sample(playablesB$card,1)
           this_new_state <- cards2state(handA = handB[-which(handB == playB)], pinta_suit = pinta_suit, known_cards = c(known_cards_aux,playB), turn = act, play_first = play_first_aux)
         }
@@ -2000,6 +2001,7 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
             }
           }
         } else {
+          play_first_aux <- "B" 
           playB <- sample(handB,1)
           this_new_state <- cards2state(handA = handB[-which(handB == playB)], pinta_suit = pinta_suit, known_cards = c(known_cards_aux,playB), turn = act, play_first = play_first_aux)
         }
@@ -2031,6 +2033,7 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
           }
         }
       } else {
+        play_first_aux <- "A" 
         playB <- sample(handB,1)
         this_new_state <- cards2state(handA = handB[-which(handB == playB)], pinta_suit = pinta_suit, known_cards = c(known_cards_aux,playB), turn = act, play_first = play_first_aux)
       }
@@ -2107,6 +2110,7 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
             }
           }
         } else {
+          play_first_aux <- "B" 
           playA <- sample(playablesA$card,1)
           this_new_state <- cards2state(handA = handA[-which(handA == playA)], pinta_suit = pinta_suit, known_cards = c(known_cards_aux,playA), turn = act, play_first = play_first_aux)
         }
@@ -2133,6 +2137,7 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
             }
           }
         } else {
+          play_first_aux <- "B" 
           playA <- sample(handA,1)
           this_new_state <- cards2state(handA = handA[-which(handA == playA)], pinta_suit = pinta_suit, known_cards = c(known_cards_aux,playA), turn = act, play_first = play_first_aux)
         }
@@ -2152,7 +2157,7 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
     if (act < 20) {
       act <- act + 1
       data_rele[act,]$State <- data_rele$NewState[act-1]
-      data_rele[act-1] <- this_new_state
+      data_rele$NewState[act-1] <- this_new_state
       data_rele$Details[act] <- ""
       data_rele$HandA[act] <- paste(handA, collapse = ",")
       data_rele$HandB[act] <- paste(handB, collapse = ",")
