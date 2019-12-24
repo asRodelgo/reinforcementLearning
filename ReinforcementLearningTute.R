@@ -49,7 +49,7 @@ cards_order <- data.frame(card = c(1,3,"rey","caballo","sota",7,6,5,4,2), order 
 ### play first game to initialize dictionary and values
 
 # play game
-this_game <- play_tute(epsilon = 0.5)
+this_game <- play_tute(p1_epsilon = 0.5, p2_epsilon = 0.5)
 Reward <- sum(this_game$Reward)
 Sfrom <- this_game$State
 Sto <- this_game$NewState

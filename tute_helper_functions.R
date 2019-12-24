@@ -1448,7 +1448,7 @@ play_tute2 <- function() {
 
 # Play a game of Tute and return final score for Player A and Player B (Player A always starts)
 # output = 'reward' (>0 if player A wins, <0 if B wins, = 0 if tied) or 'plays' (detail of each of 20 plays)
-play_tute <- function(epsilon = 0.5, output = 'plays', verbose = FALSE){
+play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verbose = FALSE){
   
   # initial deck of cards
   deck <- cards_df$card
@@ -1658,48 +1658,50 @@ play_tute <- function(epsilon = 0.5, output = 'plays', verbose = FALSE){
     #
     # rule 3: Play card
     if (winA) {
-      if (epsilon > runif(1)) {  # use max values
-        #eval_handA <- smart_pick(handA, known_cards, pinta_suit, playFirst = TRUE) 
-        #playA <- filter(eval_handA, penalty == max(penalty))$card[1]
+      if (p1_epsilon > runif(1)) {  # use max values
         # actionReward
         this_state <- cards2state(handA = handA, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = "A")
-        max_reward <- -100
-        playA <- handA[1]
+        max_value <- -100
         print("A plays first:")
         for (c in handA) {
-          thisReward <- actionReward(state = this_state, action = c)$Reward
-          print(paste0(c," ",thisReward))
-          if (thisReward > max_reward) {
-            max_reward <- thisReward
+          this_new_state <- cards2state(handA = handA[-which(handA == c)], pinta_suit = pinta_suit, known_cards = c(known_cards,c), turn = act, play_first = "A")
+          thisValue <- filter(dictionary, Sfrom == this_state, Sto == this_new_state)$Value
+          if (length(thisValue)==0) thisValue <- 0 # in case this state is not yet registered in the dictionary 
+          print(paste0(c," ",thisValue))
+          if (thisValue > max_value) {
+            max_value <- thisValue
             playA <- c
           }
         }
-      } else playA <- sample(handA,1)
-      
+      } else {
+        playA <- sample(handA,1)
+        this_new_state <- cards2state(handA = handA[-which(handA == playA)], pinta_suit = pinta_suit, known_cards = c(known_cards,playA), turn = act, play_first = "A")
+      }
       suitA <- str_split(playA,"_")[[1]][1]
       numberA <- str_split(playA,"_")[[1]][2]
       valueA <- filter(cards_df, card == playA)$value
       handA <- handA[-which(handA == playA)]
       # player B responds. Need to take into account the card played by player A
-      if (epsilon > runif(1)) {
-        #eval_handB <- smart_pick(handB, known_cards, pinta_suit, playFirst = FALSE, played_card = playA) 
-        #playB <- filter(eval_handB, penalty == max(penalty))$card[1]
-        # actionReward
+      if (p2_epsilon > runif(1)) {
         # this_state from the point of view of player B
         this_state <- cards2state(handA = handB, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = "B")
-        max_reward <- -100
+        max_value <- -100
         playB <- handB[1]
         print("B responds:")
         for (c in handB) {
-          thisReward <- actionReward(state = this_state, action = c, played_card = playA)$Reward
+          this_new_state <- cards2state(handA = handB[-which(handB == c)], pinta_suit = pinta_suit, known_cards = c(known_cards,c), turn = act, play_first = "B")
+          thisValue <- filter(dictionary, Sfrom == this_state, Sto == this_new_state)$Value
+          if (length(thisValue)==0) thisValue <- 0 # in case this state is not yet registered in the dictionary 
           print(paste0(c," ",thisReward))
-          if (thisReward > max_reward) {
-            max_reward <- thisReward
+          if (thisValue > max_value) {
+            max_value <- thisValue
             playB <- c
           }
         }
-      } else playB <- sample(handB,1)
-      
+      } else {
+        playB <- sample(handB,1)
+        this_new_state <- cards2state(handA = handB[-which(handB == playB)], pinta_suit = pinta_suit, known_cards = c(known_cards,playB), turn = act, play_first = "B")
+      }
       handB <- handB[-which(handB == playB)]
       suitB <- str_split(playB,"_")[[1]][1]
       numberB <- str_split(playB,"_")[[1]][2]
@@ -1707,47 +1709,53 @@ play_tute <- function(epsilon = 0.5, output = 'plays', verbose = FALSE){
       known_cards <- c(known_cards,playA,playB)
     } else { # winA = FALSE
       #
-      if (epsilon > runif(1)) {
-        #eval_handB <- smart_pick(handB, known_cards, pinta_suit, playFirst = TRUE) 
-        #playB <- filter(eval_handB, penalty == max(penalty))$card[1]
+      if (p2_epsilon > runif(1)) {
         # actionReward
         this_state <- cards2state(handA = handB, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = "A")
-        max_reward <- -100
+        max_value <- -100
         playB <- handB[1]
         print("B plays first:")
         for (c in handB) {
-          thisReward <- actionReward(state = this_state, action = c)$Reward
-          print(paste0(c," ",thisReward))
-          if (thisReward > max_reward) {
-            max_reward <- thisReward
+          this_new_state <- cards2state(handA = handB[-which(handB == c)], pinta_suit = pinta_suit, known_cards = c(known_cards,c), turn = act, play_first = "A")
+          thisValue <- filter(dictionary, Sfrom == this_state, Sto == this_new_state)$Value
+          if (length(thisValue)==0) thisValue <- 0 # in case this state is not yet registered in the dictionary 
+          print(paste0(c," ",thisValue))
+          if (thisValue > max_value) {
+            max_value <- thisValue
             playB <- c
           }
         }
-      } else playB <- sample(handB,1)
-      
+      } else  {
+        playB <- sample(handB,1)
+        this_new_state <- cards2state(handA = handB[-which(handB == playB)], pinta_suit = pinta_suit, known_cards = c(known_cards,playB), turn = act, play_first = "A")
+      }
       handB <- handB[-which(handB == playB)]
       suitB <- str_split(playB,"_")[[1]][1]
       numberB <- str_split(playB,"_")[[1]][2]
       valueB <- filter(cards_df, card == playB)$value
       #
-      if (epsilon > runif(1)) {
+      if (p1_epsilon > runif(1)) {
         #eval_handA <- smart_pick(handA, known_cards, pinta_suit, playFirst = FALSE, played_card = playB) 
         #playA <- filter(eval_handA, penalty == max(penalty))$card[1]
         # actionReward
         this_state <- cards2state(handA = handA, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = "B")
-        max_reward <- -100
+        max_value <- -100
         playA <- handA[1]
         print("A responds:")
         for (c in handA) {
-          thisReward <- actionReward(state = this_state, action = c, played_card = playB)$Reward
-          print(paste0(c," ",thisReward))
-          if (thisReward > max_reward) {
-            max_reward <- thisReward
+          this_new_state <- cards2state(handA = handA[-which(handA == c)], pinta_suit = pinta_suit, known_cards = c(known_cards,c), turn = act, play_first = "B")
+          thisValue <- filter(dictionary, Sfrom == this_state, Sto == this_new_state)$Value
+          if (length(thisValue)==0) thisValue <- 0 # in case this state is not yet registered in the dictionary 
+          print(paste0(c," ",thisValue))
+          if (thisValue > max_value) {
+            max_value <- thisValue
             playA <- c
           }
         }
-      } else playA <- sample(handA,1)
-      
+      } else {
+        playA <- sample(handA,1)
+        this_new_state <- cards2state(handA = handA[-which(handA == playA)], pinta_suit = pinta_suit, known_cards = c(known_cards,playA), turn = act, play_first = "B")
+      }
       suitA <- str_split(playA,"_")[[1]][1]
       numberA <- str_split(playA,"_")[[1]][2]
       valueA <- filter(cards_df, card == playA)$value
@@ -1843,6 +1851,7 @@ play_tute <- function(epsilon = 0.5, output = 'plays', verbose = FALSE){
     data_rele$Reward[act] <- pointsA - pointsB
     act <- act + 1
     data_rele[act,]$State <- data_rele$NewState[act-1]
+    data_rele$NewState[act-1] <- this_new_state
     data_rele$Details[act] <- paste("",paste0("drawA_",drawA),paste0("drawB_",drawB), collapse = ";")
     data_rele$HandA[act] <- paste(handA, collapse = ",")
     data_rele$HandB[act] <- paste(handB, collapse = ",")
@@ -1868,26 +1877,30 @@ play_tute <- function(epsilon = 0.5, output = 'plays', verbose = FALSE){
     pointsB <- 0
     if (winA2) { # if player A won the last hand
       #
-      if (epsilon > runif(1)) {
+      if (p1_epsilon > runif(1)) {
         #eval_handA <- smart_pick2(handA, known_cards, pinta_suit, playFirst = TRUE) 
         #playA <- filter(eval_handA, penalty == max(penalty))$card[1]
         # actionReward
         play_first_aux <- "A" # in reality play_first is B but here B acts as A
         known_cards_aux <- unique(known_cards[-which(handB %in% known_cards)]) # There are no more cards in the deck so all cards are known to this player
         this_state <- cards2state(handA = handA, pinta_suit = pinta_suit, known_cards = known_cards_aux, turn = act, play_first = play_first_aux)
-        max_reward <- -100
-        playA <- handA[1]
+        max_value <- -100
+        #playA <- handA[1]
         print("A plays first:")
         for (c in handA) {
-          thisReward <- actionReward(state = this_state, action = c)$Reward
-          print(paste0(c," ",thisReward))
-          if (thisReward > max_reward) {
-            max_reward <- thisReward
+          this_new_state <- cards2state(handA = handA[-which(handA == c)], pinta_suit = pinta_suit, known_cards = c(known_cards,c), turn = act, play_first = play_first_aux)
+          thisValue <- filter(dictionary, Sfrom == this_state, Sto == this_new_state)$Value
+          if (length(thisValue)==0) thisValue <- 0 # in case this state is not yet registered in the dictionary 
+          print(paste0(c," ",thisValue))
+          if (thisValue > max_value) {
+            max_value <- thisValue 
             playA <- c
           }
         }
-      } else playA <- sample(handA,1)
-      
+      } else {
+        playA <- sample(handA,1)
+        this_new_state <- cards2state(handA = handA[-which(handA == playA)], pinta_suit = pinta_suit, known_cards = c(known_cards,playA), turn = act, play_first = play_first_aux)
+      }
       suitA <- str_split(playA,"_")[[1]][1]
       numberA <- str_split(playA,"_")[[1]][2]
       valueA <- filter(cards_df, card == playA)$value
@@ -1909,26 +1922,27 @@ play_tute <- function(epsilon = 0.5, output = 'plays', verbose = FALSE){
           print(paste0(playB, " ",pointsB))
         } else {
           #
-          if (epsilon > runif(1)) {
-            #eval_handB <- smart_pick2(playablesB$card, known_cards, pinta_suit, playFirst = FALSE, played_card = playA) 
-            #playB <- filter(eval_handB, penalty == max(penalty))$card[1]
+          if (p2_epsilon > runif(1)) {
             # actionReward
             play_first_aux <- "B" # in reality play_first is B but here B acts as A
             known_cards_aux <- unique(known_cards[-which(handA %in% known_cards)]) # There are no more cards in the deck so all cards are known to this player
             this_state <- cards2state(handA = handB, pinta_suit = pinta_suit, known_cards = known_cards_aux, turn = act, play_first = play_first_aux)
-            max_reward <- -100
-            playB <- handB[1]
+            max_value <- -100
             print("B responds:")
             for (c in handB) {
-              thisReward <- actionReward(state = this_state, action = c)$Reward
-              print(paste0(c," ",thisReward))
-              if (thisReward > max_reward) {
-                max_reward <- thisReward
+              this_new_state <- cards2state(handA = handB[-which(handB == c)], pinta_suit = pinta_suit, known_cards = c(known_cards_aux,c), turn = act, play_first = play_first_aux)
+              thisValue <- filter(dictionary, Sfrom == this_state, Sto == this_new_state)$Value
+              if (length(thisValue)==0) thisValue <- 0 # in case this state is not yet registered in the dictionary 
+              print(paste0(c," ",thisValue))
+              if (thisValue > max_value) {
+                max_value <- thisValue
                 playB <- c
               }
             }
-          } else playB <- sample(playablesB$card,1)
-          
+          } else {
+            playB <- sample(playablesB$card,1)
+            this_new_state <- cards2state(handA = handB[-which(handB == playB)], pinta_suit = pinta_suit, known_cards = c(known_cards_aux,playB), turn = act, play_first = play_first_aux)
+          }
           valueB <- filter(cards_df, card == playB)$value
           pointsA <- pointsA + valueA + valueB
           winA2 <- TRUE
@@ -1940,51 +1954,55 @@ play_tute <- function(epsilon = 0.5, output = 'plays', verbose = FALSE){
           mutate(order = order(str_split(card,"_")[[1]][2])) %>%
           ungroup() 
         #
-        if (epsilon > runif(1)) {
+        if (p2_epsilon > runif(1)) {
           #eval_handB <- smart_pick2(playablesB$card, known_cards, pinta_suit, playFirst = FALSE, played_card = playA) 
           #playB <- filter(eval_handB, penalty == max(penalty))$card[1]
           # actionReward
           play_first_aux <- "B" # in reality play_first is B but here B acts as A
           known_cards_aux <- unique(known_cards[-which(handA %in% known_cards)]) # There are no more cards in the deck so all cards are known to this player
           this_state <- cards2state(handA = handB, pinta_suit = pinta_suit, known_cards = known_cards_aux, turn = act, play_first = play_first_aux)
-          max_reward <- -100
-          playB <- handB[1]
+          max_value <- -100
           print("B responds:")
           for (c in playablesB$card) {
-            thisReward <- actionReward(state = this_state, action = c)$Reward
-            print(paste0(c," ",thisReward))
-            if (thisReward > max_reward) {
-              max_reward <- thisReward
+            this_new_state <- cards2state(handA = handB[-which(handB == c)], pinta_suit = pinta_suit, known_cards = c(known_cards_aux,c), turn = act, play_first = play_first_aux)
+            thisValue <- filter(dictionary, Sfrom == this_state, Sto == this_new_state)$Value
+            if (length(thisValue)==0) thisValue <- 0 # in case this state is not yet registered in the dictionary 
+            print(paste0(c," ",thisValue))
+            if (thisValue > max_value) {
+              max_value <- thisValue
               playB <- c
             }
           }
-        } else playB <- sample(playablesB$card,1)
-        
+        } else {
+          playB <- sample(playablesB$card,1)
+          this_new_state <- cards2state(handA = handB[-which(handB == playB)], pinta_suit = pinta_suit, known_cards = c(known_cards_aux,playB), turn = act, play_first = play_first_aux)
+        }
         valueB <- filter(cards_df, card == playB)$value
         pointsB <- pointsB + valueA + valueB
         winA2 <- FALSE
       } else { # can't follow suit and don't have pinta card
         #
-        if (epsilon > runif(1)) {
-          #eval_handB <- smart_pick2(handB, known_cards, pinta_suit, playFirst = FALSE, played_card = playA) 
-          #playB <- filter(eval_handB, penalty == max(penalty))$card[1]
+        if (p2_epsilon > runif(1)) {
           # actionReward
           play_first_aux <- "B" # in reality play_first is B but here B acts as A
           known_cards_aux <- unique(known_cards[-which(handA %in% known_cards)]) # There are no more cards in the deck so all cards are known to this player
           this_state <- cards2state(handA = handB, pinta_suit = pinta_suit, known_cards = known_cards_aux, turn = act, play_first = play_first_aux)
-          max_reward <- -100
-          playB <- handB[1]
+          max_value <- -100
           print("B responds:")
           for (c in handB) {
-            thisReward <- actionReward(state = this_state, action = c)$Reward
-            print(paste0(c," ",thisReward))
-            if (thisReward > max_reward) {
-              max_reward <- thisReward
+            this_new_state <- cards2state(handA = handB[-which(handB == c)], pinta_suit = pinta_suit, known_cards = c(known_cards_aux,c), turn = act, play_first = play_first_aux)
+            thisValue <- filter(dictionary, Sfrom == this_state, Sto == this_new_state)$Value
+            if (length(thisValue)==0) thisValue <- 0 # in case this state is not yet registered in the dictionary 
+            print(paste0(c," ",thisValue))
+            if (thisValue > max_value) {
+              max_value <- thisValue
               playB <- c
             }
           }
-        } else playB <- sample(handB,1)
-        
+        } else {
+          playB <- sample(handB,1)
+          this_new_state <- cards2state(handA = handB[-which(handB == playB)], pinta_suit = pinta_suit, known_cards = c(known_cards_aux,playB), turn = act, play_first = play_first_aux)
+        }
         valueB <- filter(cards_df, card == playB)$value
         pointsA <- pointsA + valueA + valueB
         winA2 <- TRUE
@@ -1993,27 +2011,29 @@ play_tute <- function(epsilon = 0.5, output = 'plays', verbose = FALSE){
       # player B won the last hand  
     } else { # winA2 = FALSE
       #
-      if (epsilon > runif(1)) {
-        #eval_handB <- smart_pick2(handB, known_cards, pinta_suit, playFirst = TRUE) 
-        #playB <- filter(eval_handB, penalty == max(penalty))$card[1]
+      if (p1_epsilon > runif(1)) {
         # actionReward
         play_first_aux <- "A" # in reality play_first is B but here B acts as A
         known_cards_aux <- unique(known_cards[-which(handA %in% known_cards)]) # There are no more cards in the deck so all cards are known to this player
         # got to make sure handA coincides with unknown cards (cantes may have happened during phase 1)
         this_state <- cards2state(handA = handB, pinta_suit = pinta_suit, known_cards = known_cards_aux, turn = act, play_first = play_first_aux)
-        max_reward <- -100
+        max_value <- -100
         playB <- handB[1]
         print("B plays first:")
         for (c in handB) {
-          thisReward <- actionReward(state = this_state, action = c)$Reward
-          print(paste0(c," ",thisReward))
-          if (thisReward > max_reward) {
-            max_reward <- thisReward
+          this_new_state <- cards2state(handA = handB[-which(handB == c)], pinta_suit = pinta_suit, known_cards = c(known_cards_aux,c), turn = act, play_first = play_first_aux)
+          thisValue <- filter(dictionary, Sfrom == this_state, Sto == this_new_state)$Value
+          if (length(thisValue)==0) thisValue <- 0 # in case this state is not yet registered in the dictionary 
+          print(paste0(c," ",thisValue))
+          if (thisValue > max_value) {
+            max_value <- thisValue
             playB <- c
           }
         }
-      } else playB <- sample(handB,1)
-      
+      } else {
+        playB <- sample(handB,1)
+        this_new_state <- cards2state(handA = handB[-which(handB == playB)], pinta_suit = pinta_suit, known_cards = c(known_cards_aux,playB), turn = act, play_first = play_first_aux)
+      }
       suitB <- str_split(playB,"_")[[1]][1]
       numberB <- str_split(playB,"_")[[1]][2]
       valueB <- filter(cards_df, card == playB)$value
@@ -2035,26 +2055,29 @@ play_tute <- function(epsilon = 0.5, output = 'plays', verbose = FALSE){
           print(paste0(playA, " ",pointsA))
         } else {
           #
-          if (epsilon > runif(1)) {
+          if (p2_epsilon > runif(1)) {
             #eval_handA <- smart_pick2(playablesA$card, known_cards, pinta_suit, playFirst = FALSE, played_card = playB) 
             #playA <- filter(eval_handA, penalty == max(penalty))$card[1]
             # actionReward
             play_first_aux <- "B" # in reality play_first is B but here B acts as A
             known_cards_aux <- unique(known_cards[-which(handB %in% known_cards)]) # There are no more cards in the deck so all cards are known to this player
             this_state <- cards2state(handA = handA, pinta_suit = pinta_suit, known_cards = known_cards_aux, turn = act, play_first = play_first_aux)
-            max_reward <- -100
-            playA <- handA[1]
+            max_value <- -100
             print("A responds:")
             for (c in handA) {
-              thisReward <- actionReward(state = this_state, action = c, played_card = playB)$Reward
-              print(paste0(c," ",thisReward))
-              if (thisReward > max_reward) {
-                max_reward <- thisReward
+              this_new_state <- cards2state(handA = handA[-which(handA == c)], pinta_suit = pinta_suit, known_cards = c(known_cards_aux,c), turn = act, play_first = play_first_aux)
+              thisValue <- filter(dictionary, Sfrom == this_state, Sto == this_new_state)$Value
+              if (length(thisValue)==0) thisValue <- 0 # in case this state is not yet registered in the dictionary 
+              print(paste0(c," ",thisValue))
+              if (thisValue > max_value) {
+                max_value <- thisValue
                 playA <- c
               }
             }
-          } else playA <- sample(playablesA$card,1)
-          
+          } else {
+            playA <- sample(playablesA$card,1)
+            this_new_state <- cards2state(handA = handA[-which(handA == playA)], pinta_suit = pinta_suit, known_cards = c(known_cards_aux,playA), turn = act, play_first = play_first_aux)
+          }
           valueA <- filter(cards_df, card == playA)$value
           pointsB <- pointsB + valueA + valueB
           winA2 <- FALSE
@@ -2066,50 +2089,53 @@ play_tute <- function(epsilon = 0.5, output = 'plays', verbose = FALSE){
           mutate(order = order(str_split(card,"_")[[1]][2])) %>%
           ungroup() 
         #
-        if (epsilon > runif(1)) {
-          #eval_handA <- smart_pick2(playablesA$card, known_cards, pinta_suit, playFirst = FALSE, played_card = playB) 
-          #playA <- filter(eval_handA, penalty == max(penalty))$card[1]
+        if (p2_epsilon > runif(1)) {
           # actionReward
           play_first_aux <- "B" # in reality play_first is B but here B acts as A
           known_cards_aux <- unique(known_cards[-which(handB %in% known_cards)]) # There are no more cards in the deck so all cards are known to this player
           this_state <- cards2state(handA = handA, pinta_suit = pinta_suit, known_cards = known_cards_aux, turn = act, play_first = play_first_aux)
-          max_reward <- -100
-          playA <- handA[1]
+          max_value <- -100
           print("A responds:")
           for (c in playablesA$card) {
-            thisReward <- actionReward(state = this_state, action = c, played_card = playB)$Reward
-            print(paste0(c," ",thisReward))
-            if (thisReward > max_reward) {
-              max_reward <- thisReward
+            this_new_state <- cards2state(handA = handA[-which(handA == c)], pinta_suit = pinta_suit, known_cards = c(known_cards_aux,c), turn = act, play_first = play_first_aux)
+            thisValue <- filter(dictionary, Sfrom == this_state, Sto == this_new_state)$Value
+            if (length(thisValue)==0) thisValue <- 0 # in case this state is not yet registered in the dictionary 
+            print(paste0(c," ",thisValue))
+            if (thisValue > max_value) {
+              max_value <- thisValue
               playA <- c
             }
           }
-        } else playA <- sample(playablesA$card,1)
-        
+        } else {
+          playA <- sample(playablesA$card,1)
+          this_new_state <- cards2state(handA = handA[-which(handA == playA)], pinta_suit = pinta_suit, known_cards = c(known_cards_aux,playA), turn = act, play_first = play_first_aux)
+        }
         valueA <- filter(cards_df, card == playA)$value
         pointsA <- pointsA + valueA + valueB
         winA2 <- TRUE
       } else { # can't follow suit and don't have pinta card
         #
-        if (epsilon > runif(1)) {
-          #eval_handA <- smart_pick2(handA, known_cards, pinta_suit, playFirst = FALSE, played_card = playB)
-          #playA <- filter(eval_handA, penalty == max(penalty))$card[1]
+        if (p2_epsilon > runif(1)) {
           # actionReward
           play_first_aux <- "B" # in reality play_first is B but here B acts as A
           known_cards_aux <- unique(known_cards[-which(handB %in% known_cards)]) # There are no more cards in the deck so all cards are known to this player
           this_state <- cards2state(handA = handA, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = play_first_aux)
-          max_reward <- -100
-          playA <- handA[1]
+          max_value <- -100
           print("A responds:")
           for (c in handA) {
-            thisReward <- actionReward(state = this_state, action = c, played_card = playB)$Reward
-            print(paste0(c," ",thisReward))
-            if (thisReward > max_reward) {
-              max_reward <- thisReward
+            this_new_state <- cards2state(handA = handA[-which(handA == c)], pinta_suit = pinta_suit, known_cards = c(known_cards_aux,c), turn = act, play_first = play_first_aux)
+            thisValue <- filter(dictionary, Sfrom == this_state, Sto == this_new_state)$Value
+            if (length(thisValue)==0) thisValue <- 0 # in case this state is not yet registered in the dictionary 
+            print(paste0(c," ",thisValue))
+            if (thisValue > max_value) {
+              max_value <- thisValue
               playA <- c
             }
           }
-        } else playA <- sample(handA,1)
+        } else {
+          playA <- sample(handA,1)
+          this_new_state <- cards2state(handA = handA[-which(handA == playA)], pinta_suit = pinta_suit, known_cards = c(known_cards_aux,playA), turn = act, play_first = play_first_aux)
+        }
         valueA <- filter(cards_df, card == playA)$value
         pointsB <- pointsB + valueA + valueB
         winA2 <- FALSE
@@ -2126,6 +2152,7 @@ play_tute <- function(epsilon = 0.5, output = 'plays', verbose = FALSE){
     if (act < 20) {
       act <- act + 1
       data_rele[act,]$State <- data_rele$NewState[act-1]
+      data_rele[act-1] <- this_new_state
       data_rele$Details[act] <- ""
       data_rele$HandA[act] <- paste(handA, collapse = ",")
       data_rele$HandB[act] <- paste(handB, collapse = ",")
