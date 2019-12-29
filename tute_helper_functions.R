@@ -1483,11 +1483,16 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
   cards_state <- mutate(cards_df, State = ifelse(card %in% handA, "A", ifelse(card %in% known_cards, "K", ""))) %>%
     mutate(State = ifelse(grepl(pinta_suit,card), paste0("P",State), State)) %>%
     select(-value)
+  cards_stateB <- mutate(cards_df, State = ifelse(card %in% handB, "B", ifelse(card %in% known_cards, "K", ""))) %>%
+    mutate(State = ifelse(grepl(pinta_suit,card), paste0("P",State), State)) %>%
+    select(-value)
   data_rele <- data.frame(State = paste0(paste(cards_state$State, collapse = ","),",",1,",","WA"), 
                           Action = "",
                           Reward = 0,
                           NewState = "",
                           Details = "",
+                          StateB = paste0(paste(cards_stateB$State, collapse = ","),",",1,",","WA"),
+                          NewStateB = "",
                           HandA = paste(handA, collapse = ","),
                           HandB = paste(handB, collapse = ","),
                           stringsAsFactors = FALSE)
@@ -1658,6 +1663,7 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
     #
     # rule 3: Play card
     if (winA) {
+      set.seed(123)
       if (p1_epsilon > runif(1)) {  # use max values
         # actionReward
         this_state <- cards2state(handA = handA, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = "A")
@@ -1677,6 +1683,7 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
         playA <- sample(handA,1)
         this_new_state <- cards2state(handA = handA[-which(handA == playA)], pinta_suit = pinta_suit, known_cards = c(known_cards,playA), turn = act, play_first = "A")
       }
+      new_stateA <- this_new_state
       suitA <- str_split(playA,"_")[[1]][1]
       numberA <- str_split(playA,"_")[[1]][2]
       valueA <- filter(cards_df, card == playA)$value
@@ -1702,6 +1709,7 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
         playB <- sample(handB,1)
         this_new_state <- cards2state(handA = handB[-which(handB == playB)], pinta_suit = pinta_suit, known_cards = c(known_cards,playB), turn = act, play_first = "B")
       }
+      new_stateB <- gsub("A,","B,",this_new_state)
       handB <- handB[-which(handB == playB)]
       suitB <- str_split(playB,"_")[[1]][1]
       numberB <- str_split(playB,"_")[[1]][2]
@@ -1729,6 +1737,7 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
         playB <- sample(handB,1)
         this_new_state <- cards2state(handA = handB[-which(handB == playB)], pinta_suit = pinta_suit, known_cards = c(known_cards,playB), turn = act, play_first = "A")
       }
+      new_stateB <- this_new_state
       handB <- handB[-which(handB == playB)]
       suitB <- str_split(playB,"_")[[1]][1]
       numberB <- str_split(playB,"_")[[1]][2]
@@ -1756,6 +1765,7 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
         playA <- sample(handA,1)
         this_new_state <- cards2state(handA = handA[-which(handA == playA)], pinta_suit = pinta_suit, known_cards = c(known_cards,playA), turn = act, play_first = "B")
       }
+      new_stateA <- this_new_state
       suitA <- str_split(playA,"_")[[1]][1]
       numberA <- str_split(playA,"_")[[1]][2]
       valueA <- filter(cards_df, card == playA)$value
@@ -1847,11 +1857,13 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
       mutate(State = ifelse(grepl(pinta_suit,card), paste0("P",State), State)) %>%
       mutate(State = ifelse(card %in% known_cards, paste0(State,"K"), State))
     data_rele$NewState[act] <- paste0(paste(cards_state$State, collapse = ","),",",act+1,",W",prev_hand_winner)
+    data_rele$NewStateB[act] <- paste0(paste(cards_stateB$State, collapse = ","),",",act+1,",W",prev_hand_winner)
     data_rele$Action[act] <- playA
     data_rele$Reward[act] <- pointsA - pointsB
     act <- act + 1
     data_rele[act,]$State <- data_rele$NewState[act-1]
-    data_rele$NewState[act-1] <- this_new_state
+    data_rele$NewState[act-1] <- new_stateA
+    data_rele$NewStateB[act-1] <- new_stateB
     data_rele$Details[act] <- paste("",paste0("drawA_",drawA),paste0("drawB_",drawB), collapse = ";")
     data_rele$HandA[act] <- paste(handA, collapse = ",")
     data_rele$HandB[act] <- paste(handB, collapse = ",")

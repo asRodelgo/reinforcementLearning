@@ -47,7 +47,7 @@ cards_df <- define_cards() # Define cards, values and their order
 cards_order <- data.frame(card = c(1,3,"rey","caballo","sota",7,6,5,4,2), order = seq(1,10,1), stringsAsFactors = FALSE)
 
 ### play first game to initialize dictionary and values
-
+dictionary <- data.frame(Sfrom = "", Sto = "", Value = 0, stringsAsFactors = FALSE)
 # play game
 this_game <- play_tute(p1_epsilon = 0.5, p2_epsilon = 0.5)
 Reward <- sum(this_game$Reward)
