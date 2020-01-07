@@ -42,7 +42,8 @@
 # Add states and respective values to the dictionary of states-values
 
 library(tidyverse)
-source("C:/Users/ASanchez3/Desktop/tute_helper_functions.R") # load helper_functions
+#source("C:/Users/ASanchez3/Desktop/tute_helper_functions.R") # load helper_functions
+source("tute_helper_functions.R") # load helper_functions
 cards_df <- define_cards() # Define cards, values and their order
 cards_order <- data.frame(card = c(1,3,"rey","caballo","sota",7,6,5,4,2), order = seq(1,10,1), stringsAsFactors = FALSE)
 
@@ -63,31 +64,51 @@ values0 <- rep(0, 19) # initial values
 values_new_A <- sort(abs(backfeed_Reward(values = values0, reward = Reward_A, learning_rate = 0.4, gamma = 0.9)))*sign(Reward_A)
 values_new_B <- -values_new_A
 
-# update dictionary (create it for the first time on this instance)
-dictionary <- data.frame(Sfrom = c(Sfrom_A,Sfrom_B), Sto = c(Sto_A,Sto_B), Value = c(values_new_A,values_new_B), stringsAsFactors = FALSE)
+#### update dictionary (create it for the first time on this instance)
+# step 1
+dictionary_new <- data.frame(Sfrom = c(Sfrom_A,Sfrom_B), Sto = c(Sto_A,Sto_B), Value = c(values_new_A,values_new_B), stringsAsFactors = FALSE)
 
-# invariants
-inv <- compute_invariants(state = dictionary$Sfrom[1])
+# step 2: invariants
+dictionary_inv <- #dictionary %>%
+  group_by(dictionary_new, Sfrom, Sto) %>% 
+  mutate(inv_Sfrom = list(compute_invariants(Sfrom)), inv_Sto = list(compute_invariants(Sto))) %>%
+  ungroup() %>%
+  mutate(id = seq(1,38))
+  
+dictionary_inv2 <- data.frame(Sfrom = unlist(dictionary_inv$inv_Sfrom), Sto = unlist(dictionary_inv$inv_Sto))
 
-## play second game
-this_game <- play_tute(epsilon = 0.5)
-Reward <- sum(this_game$Reward)
-Sfrom <- this_game$State
-Sto <- this_game$NewState
+# step 3
+inv_values <- do.call("rbind", replicate(n = 24, select(dictionary_inv, Value, id), simplify = FALSE)) %>%
+  arrange(id) %>%
+  select(Value)
+
+dictionary_inv3 <- bind_cols(dictionary_inv2, inv_values) %>%
+  as.data.frame()
+
+# step 4
+dictionary <- bind_rows(dictionary, dictionary_inv3)
+
+#### play second game
+this_game <- play_tute(p1_epsilon = 0.5, p2_epsilon = 0.5)
+Reward_A <- sum(this_game$Reward)
+Sfrom_A <- this_game$State[1:19]
+Sto_A <- this_game$NewState[1:19]
+Reward_B <- -Reward_A
+Sfrom_B <- this_game$StateB[1:19]
+Sto_B <- this_game$NewStateB[1:19]
+
 
 # update values
 this_game_values <- this_game %>% # initial values
   left_join(dictionary, by = c("State"="Sfrom","NewState"="Sto")) %>%
   mutate(Value = replace_na(Value,0))
 values0 <- this_game_values$Value
-values_new <- sort(abs(backfeed_Reward(values = values0, reward = Reward, learning_rate = 0.4, gamma = 0.9)))*sign(Reward)
+values_new_A <- sort(abs(backfeed_Reward(values = values0, reward = Reward_A, learning_rate = 0.4, gamma = 0.9)))*sign(Reward_A)
+values_new_B <- -values_new_A
 
-this_game <- mutate(this_game, Value = values_new)
+#this_game <- mutate(this_game, Value = values_new)
 
 # update dictionary
-dictionary2 <- full_join(dictionary, select(this_game, State, NewState, Value), by = c("Sfrom"="State","Sto"="NewState")) %>%
-  mutate(Value = ifelse(!is.na(Value.y), Value.y, Value.x)) %>%
-  select(-contains("."))
 
 # iterate from here recursively
 

@@ -1486,15 +1486,15 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
   cards_stateB <- mutate(cards_df, State = ifelse(card %in% handB, "B", ifelse(card %in% known_cards, "K", ""))) %>%
     mutate(State = ifelse(grepl(pinta_suit,card), paste0("P",State), State)) %>%
     select(-value)
-  data_rele <- data.frame(State = paste0(paste(cards_state$State, collapse = ","),",",1,",","WA"), 
-                          Action = "",
-                          Reward = 0,
-                          NewState = "",
-                          Details = "",
-                          StateB = "",
-                          NewStateB = "",
-                          HandA = paste(handA, collapse = ","),
-                          HandB = paste(handB, collapse = ","),
+  data_rele <- data.frame(State = c(paste0(paste(cards_state$State, collapse = ","),",",1,",","WA"),rep("",19)), 
+                          Action = rep("",20),
+                          Reward = rep(0,20),
+                          NewState = rep("",20),
+                          Details = rep("",20),
+                          StateB = rep("",20),
+                          NewStateB = rep("",20),
+                          HandA = c(paste(handA, collapse = ","),rep("",19)),
+                          HandB = c(paste(handB, collapse = ","),rep("",19)),
                           stringsAsFactors = FALSE)
   # Action counter
   act <- 1
@@ -1778,6 +1778,9 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
     }
     known_cards <- unique(known_cards)
     data_rele$Details[act] <- paste(data_rele$Details[act],paste0("playA_",playA),paste0("playB_",playB), collapse = ";")
+    data_rele$Details[act] <- paste(data_rele$Details[act],paste0("drawA_",drawA),paste0("drawB_",drawB), collapse = ";")
+    data_rele$HandA[act] <- paste(handA, collapse = ",")
+    data_rele$HandB[act] <- paste(handB, collapse = ",")
     stateB <- gsub("A,","B,",stateB)
     if (verbose) {
       print(eval_handA)
@@ -1860,18 +1863,22 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
     cards_state <- mutate(cards_state, State = ifelse(card %in% handA, "A", "")) %>%
       mutate(State = ifelse(grepl(pinta_suit,card), paste0("P",State), State)) %>%
       mutate(State = ifelse(card %in% known_cards, paste0(State,"K"), State))
-    data_rele$NewState[act] <- paste0(paste(cards_state$State, collapse = ","),",",act+1,",W",prev_hand_winner)
-    data_rele$NewStateB[act] <- paste0(paste(cards_stateB$State, collapse = ","),",",act+1,",W",prev_hand_winner)
+    data_rele$State[act] <- stateA
+    data_rele$NewState[act] <- new_stateA
+      #paste0(paste(cards_state$State, collapse = ","),",",act+1,",W",prev_hand_winner)
+    data_rele$StateB[act] <- stateB
+    data_rele$NewStateB[act] <- new_stateB
+      #paste0(paste(cards_stateB$State, collapse = ","),",",act+1,",W",prev_hand_winner)
     data_rele$Action[act] <- playA
     data_rele$Reward[act] <- pointsA - pointsB
     act <- act + 1
-    data_rele[act,]$State <- data_rele$NewState[act-1]
-    data_rele$NewState[act-1] <- new_stateA
-    data_rele$StateB[act-1] <- stateB
-    data_rele$NewStateB[act-1] <- new_stateB
-    data_rele$Details[act] <- paste("",paste0("drawA_",drawA),paste0("drawB_",drawB), collapse = ";")
-    data_rele$HandA[act] <- paste(handA, collapse = ",")
-    data_rele$HandB[act] <- paste(handB, collapse = ",")
+    #data_rele[act,]$State <- data_rele$NewState[act-1]
+    #data_rele$NewState[act-1] <- new_stateA
+    #data_rele$StateB[act-1] <- stateB
+    #data_rele$NewStateB[act-1] <- new_stateB
+    #data_rele$Details[act] <- paste("",paste0("drawA_",drawA),paste0("drawB_",drawB), collapse = ";")
+    #data_rele$HandA[act] <- paste(handA, collapse = ",")
+    #data_rele$HandB[act] <- paste(handB, collapse = ",")
     #
     #continue <- readline(prompt = "Continue? y/n")
     #if (continue == "y") keep_on <- TRUE else keep_on <- FALSE
@@ -2188,20 +2195,24 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
     cards_state <- mutate(cards_state, State = ifelse(card %in% handA, "A", "")) %>%
       mutate(State = ifelse(grepl(pinta_suit,card), paste0("P",State), State)) %>%
       mutate(State = ifelse(card %in% known_cards, paste0(State,"K"), State))
-    data_rele$NewState[act] <- paste0(paste(cards_state$State, collapse = ","),",",act+1,",W",prev_hand_winner)
-    data_rele$NewStateB[act] <- ""
+    data_rele$State[act] <- stateA
+    data_rele$NewState[act] <- new_stateA
+      #paste0(paste(cards_state$State, collapse = ","),",",act+1,",W",prev_hand_winner)
+    data_rele$StateB[act] <- stateB
+    data_rele$NewStateB[act] <- new_stateB
     data_rele$Action[act] <- playA
     data_rele$Reward[act] <- pointsA - pointsB
-    data_rele$Details[act] <- paste("",paste0("drawA_",drawA),paste0("drawB_",drawB), collapse = ";")
+    #data_rele$HandA[act+1] <- paste(handA, collapse = ",")
+    #data_rele$HandB[act+1] <- paste(handB, collapse = ",")
     if (act < 20) {
       act <- act + 1
-      data_rele[act,]$State <- data_rele$NewState[act-1]
-      data_rele$NewState[act-1] <- new_stateA
-      data_rele$StateB[act-1] <- stateB
-      data_rele$NewStateB[act-1] <- new_stateB
-      data_rele$Details[act] <- ""
-      data_rele$HandA[act] <- paste(handA, collapse = ",")
-      data_rele$HandB[act] <- paste(handB, collapse = ",")
+      #data_rele[act,]$State <- data_rele$NewState[act-1]
+      #data_rele$NewState[act-1] <- new_stateA
+      #data_rele$StateB[act-1] <- stateB
+      #data_rele$NewStateB[act-1] <- new_stateB
+      #data_rele$Details[act] <- ""
+      #data_rele$HandA[act] <- paste(handA, collapse = ",")
+      #data_rele$HandB[act] <- paste(handB, collapse = ",")
     }
     if (verbose) {
       print(paste0("playA: ",playA," playB: ",playB))
@@ -2248,7 +2259,7 @@ backfeed_Reward <- function(values, reward, learning_rate, gamma) {
 # Each state has 4! identical states by permutations of the 4 different suits
 compute_invariants <- function(state) {
   
-  state <- this_game$State[1]
+  #state <- this_game$State[1]
   state_raw <- str_split(state,",")[[1]]
   inv <- list()
   inv[[1]] <- state_raw[1:10]
@@ -2265,7 +2276,7 @@ compute_invariants <- function(state) {
       for (k in c(1:4)[-c(i,j)]) {
         l <- c(1:4)[-c(i,j,k)]
         #print(c(i,j,k,l))
-        this_inv <- c(inv[[i]],inv[[j]],inv[[k]],inv[[l]])
+        this_inv <- c(inv[[i]],inv[[j]],inv[[k]],inv[[l]],turn_start)
         this_inv <- paste(this_inv, collapse = ",")
         invStates[[count]] <- this_inv
         count <- count + 1
@@ -2275,6 +2286,8 @@ compute_invariants <- function(state) {
   
   return(invStates)
 }
+
+Invariant <- Vectorize(compute_invariants)
 
 # compute player B states
 state_playerB <- function(stateA, handB) {
