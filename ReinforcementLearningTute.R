@@ -86,7 +86,9 @@ dictionary_inv3 <- bind_cols(dictionary_inv2, inv_values) %>%
   as.data.frame()
 
 # step 4
-dictionary <- bind_rows(dictionary, dictionary_inv3)
+dictionary <- bind_rows(dictionary, dictionary_inv3) %>%
+  filter(nchar(Sfrom) > 0) %>%
+  distinct(Sfrom,Sto, .keep_all = TRUE)
 
 #### play second game
 this_game <- play_tute(p1_epsilon = 0.5, p2_epsilon = 0.5)
@@ -97,18 +99,38 @@ Reward_B <- -Reward_A
 Sfrom_B <- this_game$StateB[1:19]
 Sto_B <- this_game$NewStateB[1:19]
 
-
 # update values
 this_game_values <- this_game %>% # initial values
   left_join(dictionary, by = c("State"="Sfrom","NewState"="Sto")) %>%
   mutate(Value = replace_na(Value,0))
-values0 <- this_game_values$Value
+values0 <- this_game_values$Value[1:19]
 values_new_A <- sort(abs(backfeed_Reward(values = values0, reward = Reward_A, learning_rate = 0.4, gamma = 0.9)))*sign(Reward_A)
 values_new_B <- -values_new_A
 
-#this_game <- mutate(this_game, Value = values_new)
+#### update dictionary
+dictionary_new <- data.frame(Sfrom = c(Sfrom_A,Sfrom_B), Sto = c(Sto_A,Sto_B), Value = c(values_new_A,values_new_B), stringsAsFactors = FALSE)
 
-# update dictionary
+# step 2: invariants
+dictionary_inv <- #dictionary %>%
+  group_by(dictionary_new, Sfrom, Sto) %>% 
+  mutate(inv_Sfrom = list(compute_invariants(Sfrom)), inv_Sto = list(compute_invariants(Sto))) %>%
+  ungroup() %>%
+  mutate(id = seq(1,38))
+
+dictionary_inv2 <- data.frame(Sfrom = unlist(dictionary_inv$inv_Sfrom), Sto = unlist(dictionary_inv$inv_Sto))
+
+# step 3
+inv_values <- do.call("rbind", replicate(n = 24, select(dictionary_inv, Value, id), simplify = FALSE)) %>%
+  arrange(id) %>%
+  select(Value)
+
+dictionary_inv3 <- bind_cols(dictionary_inv2, inv_values) %>%
+  as.data.frame()
+
+# step 4
+dictionary <- bind_rows(dictionary, dictionary_inv3) %>%
+  filter(nchar(Sfrom) > 0) %>%
+  distinct(Sfrom,Sto, .keep_all = TRUE)
 
 # iterate from here recursively
 

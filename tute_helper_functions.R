@@ -1663,7 +1663,7 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
     #
     # rule 3: Play card
     if (winA) { # A plays first
-      set.seed(123)
+      #set.seed(123)
       this_state <- cards2state(handA = handA, pinta_suit = pinta_suit, known_cards = known_cards, turn = act, play_first = "A")
       stateA <- this_state
       if (p1_epsilon > runif(1)) {  # use max values
