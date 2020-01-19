@@ -1672,7 +1672,7 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
         for (c in handA) {
           new_state_aux <- cards2state(handA = handA[-which(handA == c)], pinta_suit = pinta_suit, known_cards = c(known_cards,c), turn = act, play_first = "A")
           thisValue <- filter(dictionary, Sfrom == this_state, Sto == new_state_aux)$Value
-          if (length(thisValue)==0) thisValue <- 0 # in case this state is not yet registered in the dictionary 
+          if (length(thisValue)==0) thisValue <- 0  else found_match <- TRUE # in case this state is not yet registered in the dictionary 
           print(paste0(c," ",thisValue))
           if (thisValue > max_value) {
             max_value <- thisValue
@@ -1701,7 +1701,7 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
         for (c in handB) {
           new_state_aux <- cards2state(handA = handB[-which(handB == c)], pinta_suit = pinta_suit, known_cards = c(known_cards,c), turn = act, play_first = "A")
           thisValue <- filter(dictionary, Sfrom == this_state, Sto == new_state_aux)$Value
-          if (length(thisValue)==0) thisValue <- 0 # in case this state is not yet registered in the dictionary 
+          if (length(thisValue)==0) thisValue <- 0  else found_match <- TRUE # in case this state is not yet registered in the dictionary 
           print(paste0(c," ",thisValue))
           if (thisValue > max_value) {
             max_value <- thisValue
@@ -1713,7 +1713,8 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
         playB <- sample(handB,1)
         this_new_state <- cards2state(handA = handB[-which(handB == playB)], pinta_suit = pinta_suit, known_cards = c(known_cards,playB), turn = act, play_first = "A")
       }
-      new_stateB <- gsub("A,","B,",this_new_state)
+      #new_stateB <- gsub("A,","B,",this_new_state)
+      new_stateB <- this_new_state
       handB <- handB[-which(handB == playB)]
       suitB <- str_split(playB,"_")[[1]][1]
       numberB <- str_split(playB,"_")[[1]][2]
@@ -1729,7 +1730,7 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
         for (c in handB) {
           new_state_aux <- cards2state(handA = handB[-which(handB == c)], pinta_suit = pinta_suit, known_cards = c(known_cards,c), turn = act, play_first = "B")
           thisValue <- filter(dictionary, Sfrom == this_state, Sto == new_state_aux)$Value
-          if (length(thisValue)==0) thisValue <- 0 # in case this state is not yet registered in the dictionary 
+          if (length(thisValue)==0) thisValue <- 0  else found_match <- TRUE # in case this state is not yet registered in the dictionary 
           print(paste0(c," ",thisValue))
           if (thisValue > max_value) {
             max_value <- thisValue
@@ -1741,7 +1742,7 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
         playB <- sample(handB,1)
         this_new_state <- cards2state(handA = handB[-which(handB == playB)], pinta_suit = pinta_suit, known_cards = c(known_cards,playB), turn = act, play_first = "B")
       }
-      new_stateB <- gsub("A,","B,",this_new_state)
+      new_stateB <- this_new_state
       handB <- handB[-which(handB == playB)]
       suitB <- str_split(playB,"_")[[1]][1]
       numberB <- str_split(playB,"_")[[1]][2]
@@ -1757,7 +1758,7 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
         for (c in handA) {
           new_state_aux <- cards2state(handA = handA[-which(handA == c)], pinta_suit = pinta_suit, known_cards = c(known_cards,c), turn = act, play_first = "B")
           thisValue <- filter(dictionary, Sfrom == this_state, Sto == new_state_aux)$Value
-          if (length(thisValue)==0) thisValue <- 0 # in case this state is not yet registered in the dictionary 
+          if (length(thisValue)==0) thisValue <- 0  else found_match <- TRUE # in case this state is not yet registered in the dictionary 
           print(paste0(c," ",thisValue))
           if (thisValue > max_value) {
             max_value <- thisValue
@@ -1778,7 +1779,6 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
     }
     known_cards <- unique(known_cards)
     data_rele$Details[act] <- paste(data_rele$Details[act],paste0("playA_",playA),paste0("playB_",playB), collapse = ";")
-    data_rele$Details[act] <- paste(data_rele$Details[act],paste0("drawA_",drawA),paste0("drawB_",drawB), collapse = ";")
     data_rele$HandA[act] <- paste(handA, collapse = ",")
     data_rele$HandB[act] <- paste(handB, collapse = ",")
     stateB <- gsub("A,","B,",stateB)
@@ -1859,6 +1859,7 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
         handA <- c(handA, drawA)
       }
     }
+    data_rele$Details[act] <- paste(data_rele$Details[act],paste0("drawA_",drawA),paste0("drawB_",drawB), collapse = ";")
     #
     cards_state <- mutate(cards_state, State = ifelse(card %in% handA, "A", "")) %>%
       mutate(State = ifelse(grepl(pinta_suit,card), paste0("P",State), State)) %>%
@@ -1911,7 +1912,7 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
         for (c in handA) {
           new_state_aux <- cards2state(handA = handA[-which(handA == c)], pinta_suit = pinta_suit, known_cards = c(known_cards,c), turn = act, play_first = play_first_aux)
           thisValue <- filter(dictionary, Sfrom == this_state, Sto == new_state_aux)$Value
-          if (length(thisValue)==0) thisValue <- 0 # in case this state is not yet registered in the dictionary 
+          if (length(thisValue)==0) thisValue <- 0  else found_match <- TRUE # in case this state is not yet registered in the dictionary 
           print(paste0(c," ",thisValue))
           if (thisValue > max_value) {
             max_value <- thisValue 
@@ -1961,7 +1962,7 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
             for (c in handB) {
               new_state_aux <- cards2state(handA = handB[-which(handB == c)], pinta_suit = pinta_suit, known_cards = c(known_cards,c), turn = act, play_first = play_first_aux)
               thisValue <- filter(dictionary, Sfrom == this_state, Sto == new_state_aux)$Value
-              if (length(thisValue)==0) thisValue <- 0 # in case this state is not yet registered in the dictionary 
+              if (length(thisValue)==0) thisValue <- 0  else found_match <- TRUE # in case this state is not yet registered in the dictionary 
               print(paste0(c," ",thisValue))
               if (thisValue > max_value) {
                 max_value <- thisValue
@@ -1973,7 +1974,7 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
             playB <- sample(playablesB$card,1)
             this_new_state <- cards2state(handA = handB[-which(handB == playB)], pinta_suit = pinta_suit, known_cards = c(known_cards,playB), turn = act, play_first = play_first_aux)
           }
-          #new_stateB <- gsub("A,","B,",this_new_state)
+          #new_stateB <- this_new_state
           valueB <- filter(cards_df, card == playB)$value
           pointsA <- pointsA + valueA + valueB
           winA2 <- TRUE
@@ -1993,7 +1994,7 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
           for (c in playablesB$card) {
             new_state_aux <- cards2state(handA = handB[-which(handB == c)], pinta_suit = pinta_suit, known_cards = c(known_cards,c), turn = act, play_first = play_first_aux)
             thisValue <- filter(dictionary, Sfrom == this_state, Sto == new_state_aux)$Value
-            if (length(thisValue)==0) thisValue <- 0 # in case this state is not yet registered in the dictionary 
+            if (length(thisValue)==0) thisValue <- 0  else found_match <- TRUE # in case this state is not yet registered in the dictionary 
             print(paste0(c," ",thisValue))
             if (thisValue > max_value) {
               max_value <- thisValue
@@ -2005,7 +2006,7 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
           playB <- sample(playablesB$card,1)
           this_new_state <- cards2state(handA = handB[-which(handB == playB)], pinta_suit = pinta_suit, known_cards = c(known_cards,playB), turn = act, play_first = play_first_aux)
         }
-        #new_stateB <- gsub("A,","B,",this_new_state)
+        #new_stateB <- this_new_state
         valueB <- filter(cards_df, card == playB)$value
         pointsB <- pointsB + valueA + valueB
         winA2 <- FALSE
@@ -2019,7 +2020,7 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
           for (c in handB) {
             new_state_aux <- cards2state(handA = handB[-which(handB == c)], pinta_suit = pinta_suit, known_cards = c(known_cards,c), turn = act, play_first = play_first_aux)
             thisValue <- filter(dictionary, Sfrom == this_state, Sto == new_state_aux)$Value
-            if (length(thisValue)==0) thisValue <- 0 # in case this state is not yet registered in the dictionary 
+            if (length(thisValue)==0) thisValue <- 0  else found_match <- TRUE # in case this state is not yet registered in the dictionary 
             print(paste0(c," ",thisValue))
             if (thisValue > max_value) {
               max_value <- thisValue
@@ -2031,12 +2032,12 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
           playB <- sample(handB,1)
           this_new_state <- cards2state(handA = handB[-which(handB == playB)], pinta_suit = pinta_suit, known_cards = c(known_cards,playB), turn = act, play_first = play_first_aux)
         }
-        #new_stateB <- gsub("A,","B,",this_new_state)
+        #new_stateB <- this_new_state
         valueB <- filter(cards_df, card == playB)$value
         pointsA <- pointsA + valueA + valueB
         winA2 <- TRUE
       }
-      new_stateB <- gsub("A,","B,",this_new_state)
+      new_stateB <- this_new_state
       handB <- handB[-which(handB == playB)]
       suitB <- str_split(playB,"_")[[1]][1]
       numberB <- str_split(playB,"_")[[1]][2]
@@ -2057,7 +2058,7 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
         for (c in handB) {
           new_state_aux <- cards2state(handA = handB[-which(handB == c)], pinta_suit = pinta_suit, known_cards = c(known_cards,c), turn = act, play_first = play_first_aux)
           thisValue <- filter(dictionary, Sfrom == this_state, Sto == new_state_aux)$Value
-          if (length(thisValue)==0) thisValue <- 0 # in case this state is not yet registered in the dictionary 
+          if (length(thisValue)==0) thisValue <- 0  else found_match <- TRUE # in case this state is not yet registered in the dictionary 
           print(paste0(c," ",thisValue))
           if (thisValue > max_value) {
             max_value <- thisValue
@@ -2069,7 +2070,7 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
         playB <- sample(handB,1)
         this_new_state <- cards2state(handA = handB[-which(handB == playB)], pinta_suit = pinta_suit, known_cards = c(known_cards,playB), turn = act, play_first = play_first_aux)
       }
-      new_stateB <- gsub("A,","B,",this_new_state)
+      new_stateB <- this_new_state
       suitB <- str_split(playB,"_")[[1]][1]
       numberB <- str_split(playB,"_")[[1]][2]
       valueB <- filter(cards_df, card == playB)$value
@@ -2106,7 +2107,7 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
             for (c in handA) {
               new_state_aux <- cards2state(handA = handA[-which(handA == c)], pinta_suit = pinta_suit, known_cards = c(known_cards,c), turn = act, play_first = play_first_aux)
               thisValue <- filter(dictionary, Sfrom == this_state, Sto == new_state_aux)$Value
-              if (length(thisValue)==0) thisValue <- 0 # in case this state is not yet registered in the dictionary 
+              if (length(thisValue)==0) thisValue <- 0  else found_match <- TRUE # in case this state is not yet registered in the dictionary 
               print(paste0(c," ",thisValue))
               if (thisValue > max_value) {
                 max_value <- thisValue
@@ -2139,7 +2140,7 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
           for (c in playablesA$card) {
             new_state_aux <- cards2state(handA = handA[-which(handA == c)], pinta_suit = pinta_suit, known_cards = c(known_cards,c), turn = act, play_first = play_first_aux)
             thisValue <- filter(dictionary, Sfrom == this_state, Sto == new_state_aux)$Value
-            if (length(thisValue)==0) thisValue <- 0 # in case this state is not yet registered in the dictionary 
+            if (length(thisValue)==0) thisValue <- 0  else found_match <- TRUE # in case this state is not yet registered in the dictionary 
             print(paste0(c," ",thisValue))
             if (thisValue > max_value) {
               max_value <- thisValue
@@ -2166,7 +2167,7 @@ play_tute <- function(p1_epsilon = 0.5, p2_epsilon = 0.5, output = 'plays', verb
           for (c in handA) {
             new_state_aux <- cards2state(handA = handA[-which(handA == c)], pinta_suit = pinta_suit, known_cards = c(known_cards,c), turn = act, play_first = play_first_aux)
             thisValue <- filter(dictionary, Sfrom == this_state, Sto == new_state_aux)$Value
-            if (length(thisValue)==0) thisValue <- 0 # in case this state is not yet registered in the dictionary 
+            if (length(thisValue)==0) thisValue <- 0  else found_match <- TRUE # in case this state is not yet registered in the dictionary 
             print(paste0(c," ",thisValue))
             if (thisValue > max_value) {
               max_value <- thisValue
