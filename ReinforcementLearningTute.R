@@ -47,55 +47,60 @@ source("tute_helper_functions.R") # load helper_functions
 cards_df <- define_cards() # Define cards, values and their order
 cards_order <- data.frame(card = c(1,3,"rey","caballo","sota",7,6,5,4,2), order = seq(1,10,1), stringsAsFactors = FALSE)
 
-### play first game to initialize dictionary and values
-dictionary <- data.frame(Sfrom = "", Sto = "", Value = 0, stringsAsFactors = FALSE)
-# play game
-this_game <- play_tute(p1_epsilon = 0.5, p2_epsilon = 0.5)
+### RUN THIS IF USING EXISTING DICTIONARY
+load("dictionary.RData")
 
-Reward_A <- sum(this_game$Reward)
-Sfrom_A <- this_game$State[1:19]
-Sto_A <- this_game$NewState[1:19]
-Reward_B <- -Reward_A
-Sfrom_B <- this_game$StateB[1:19]
-Sto_B <- this_game$NewStateB[1:19]
+### RUN THIS IF INITIALIZING LEARNING
+# ### play first game to initialize dictionary and values
+# dictionary <- data.frame(Sfrom = "", Sto = "", Value = 0, stringsAsFactors = FALSE)
+# # play game
+# this_game <- play_tute(p1_epsilon = 0.5, p2_epsilon = 0.5)
+# 
+# Reward_A <- sum(this_game$Reward)
+# Sfrom_A <- this_game$State[1:19]
+# Sto_A <- this_game$NewState[1:19]
+# Reward_B <- -Reward_A
+# Sfrom_B <- this_game$StateB[1:19]
+# Sto_B <- this_game$NewStateB[1:19]
+# 
+# # update values
+# values0 <- rep(0, 19) # initial values
+# values_new_A <- sort(abs(backfeed_Reward(values = values0, reward = Reward_A, learning_rate = 0.4, gamma = 0.9)))*sign(Reward_A)
+# values_new_B <- -values_new_A
+# 
+# #### update dictionary (create it for the first time on this instance)
+# # step 1
+# dictionary_new <- data.frame(Sfrom = c(Sfrom_A,Sfrom_B), Sto = c(Sto_A,Sto_B), Value = c(values_new_A,values_new_B), stringsAsFactors = FALSE)
+# 
+# # step 2: invariants
+# dictionary_inv <- #dictionary %>%
+#   group_by(dictionary_new, Sfrom, Sto) %>% 
+#   mutate(inv_Sfrom = list(compute_invariants(Sfrom)), inv_Sto = list(compute_invariants(Sto))) %>%
+#   ungroup() %>%
+#   mutate(id = seq(1,38))
+#   
+# dictionary_inv2 <- data.frame(Sfrom = unlist(dictionary_inv$inv_Sfrom), Sto = unlist(dictionary_inv$inv_Sto))
+# 
+# # step 3
+# inv_values <- do.call("rbind", replicate(n = 24, select(dictionary_inv, Value, id), simplify = FALSE)) %>%
+#   arrange(id) %>%
+#   select(Value)
+# 
+# dictionary_inv3 <- bind_cols(dictionary_inv2, inv_values) %>%
+#   mutate(Sfrom = gsub("B,","A,",Sfrom),Sto = gsub("B,","A,",Sto)) %>%
+#   as.data.frame()
+# 
+# # step 4
+# dictionary <- bind_rows(dictionary, dictionary_inv3) %>%
+#   filter(nchar(Sfrom) > 0) %>%
+#   distinct(Sfrom,Sto, .keep_all = TRUE)
 
-# update values
-values0 <- rep(0, 19) # initial values
-values_new_A <- sort(abs(backfeed_Reward(values = values0, reward = Reward_A, learning_rate = 0.4, gamma = 0.9)))*sign(Reward_A)
-values_new_B <- -values_new_A
-
-#### update dictionary (create it for the first time on this instance)
-# step 1
-dictionary_new <- data.frame(Sfrom = c(Sfrom_A,Sfrom_B), Sto = c(Sto_A,Sto_B), Value = c(values_new_A,values_new_B), stringsAsFactors = FALSE)
-
-# step 2: invariants
-dictionary_inv <- #dictionary %>%
-  group_by(dictionary_new, Sfrom, Sto) %>% 
-  mutate(inv_Sfrom = list(compute_invariants(Sfrom)), inv_Sto = list(compute_invariants(Sto))) %>%
-  ungroup() %>%
-  mutate(id = seq(1,38))
-  
-dictionary_inv2 <- data.frame(Sfrom = unlist(dictionary_inv$inv_Sfrom), Sto = unlist(dictionary_inv$inv_Sto))
-
-# step 3
-inv_values <- do.call("rbind", replicate(n = 24, select(dictionary_inv, Value, id), simplify = FALSE)) %>%
-  arrange(id) %>%
-  select(Value)
-
-dictionary_inv3 <- bind_cols(dictionary_inv2, inv_values) %>%
-  mutate(Sfrom = gsub("B,","A,",Sfrom),Sto = gsub("B,","A,",Sto)) %>%
-  as.data.frame()
-
-# step 4
-dictionary <- bind_rows(dictionary, dictionary_inv3) %>%
-  filter(nchar(Sfrom) > 0) %>%
-  distinct(Sfrom,Sto, .keep_all = TRUE)
-
-#### play second game $ subsequent recursively
-num_iter <- 100
+#### play games recursively
+num_iter <- 2000
 iter <- 1
-found_match <- FALSE
 while (iter <= num_iter) {
+  
+  if (is.wholenumber(iter/50)) print(iter) # tally every 50 iterations
   
   this_game <- play_tute(p1_epsilon = 0.5, p2_epsilon = 0.5)
   Reward_A <- sum(this_game$Reward)
